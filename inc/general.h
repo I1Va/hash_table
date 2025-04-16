@@ -2,6 +2,7 @@
 #define GENERAL_H
 
 #include <string.h>
+#include <stdio.h>
 
 #define GRN "\e[0;32m"
 #define WHT "\e[0;20m"

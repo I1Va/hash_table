@@ -1,27 +1,12 @@
 #include <assert.h>
 #include <cstdlib>
 #include <stdlib.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "general.h"
-
-struct string_t {
-    char *ptr;
-    size_t len;
-};
-
-typedef unsigned long long (*hash_function_t) (string_t string);
-
-struct list_node_t {
-    string_t string;
-    list_node_t* next;
-};
-
-struct hash_table_t {
-    size_t sz;
-    hash_function_t hash_function;
-    list_node_t **data;
-};
+#include "general_structs.h"
+#include "hash_table.h"
 
 int hash_table_t_ctor(hash_table_t *hash_table, const size_t sz, hash_function_t hash_function) {
     assert(hash_table);
@@ -42,10 +27,10 @@ int hash_table_t_ctor(hash_table_t *hash_table, const size_t sz, hash_function_t
 void list_dtor(list_node_t *first_node) {
     if (!first_node) return;
 
-    list_node_t *cur_node = first_node->next;
+    list_node_t *cur_node = first_node;
     while (cur_node) {
-        free(cur_node);
         list_node_t *next_node = cur_node->next;
+        free(cur_node);
         cur_node = next_node;
     }
 }
@@ -58,4 +43,74 @@ void hash_table_t_dtor(hash_table_t *hash_table) {
     }
 
     free(hash_table->data);
+}
+
+bool string_eq(string_t str1, string_t str2) {
+    assert(str1.ptr);
+    assert(str2.ptr);
+
+    if (str1.len != str2.len) return false;
+
+    return (strncmp(str1.ptr, str2.ptr, str1.len) == 0);
+}
+
+list_node_t *list_node_t_ctor(string_t key, void *data) {
+    list_node_t *list_node = (list_node_t *) calloc(1, sizeof(list_node_t));
+    if (!list_node) return NULL;
+
+    list_node->key = key;
+    list_node->data = data;
+    list_node->next = NULL;
+
+    return list_node;
+}
+
+int hash_table_set_key(hash_table_t *hash_table, string_t key, void *data) {
+    assert(hash_table);
+
+    unsigned long long table_idx = hash_table->hash_function(key) % hash_table->sz;
+
+    list_node_t *cur_node = hash_table->data[table_idx];
+    list_node_t *last_node = NULL;
+    while (cur_node) {
+        last_node = cur_node;
+        if (string_eq(cur_node->key, key)) {
+            cur_node->data = data;
+            return EXIT_SUCCESS;
+        }
+        cur_node = cur_node->next;
+    }
+
+    list_node_t *new_node = list_node_t_ctor(key, data);
+
+    if (!new_node) {
+        debug("list_node_t_ctor failed\n");
+        return EXIT_FAILURE;
+    }
+
+    if (last_node) {
+        last_node->next = new_node;
+    } else {
+        hash_table->data[table_idx] = new_node;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+bool hash_table_read_key(hash_table_t *hash_table, string_t key, void **data) {
+    assert(hash_table);
+    assert(data);
+
+    unsigned long long table_idx = hash_table->hash_function(key) % hash_table->sz;
+
+    list_node_t *cur_node = hash_table->data[table_idx];
+    while (cur_node) {
+        if (string_eq(cur_node->key, key)) {
+            *data = cur_node->data;
+            return true;
+        }
+        cur_node = cur_node->next;
+    }
+
+    return false;
 }

@@ -4,7 +4,7 @@
 #include <string.h>
 
 struct string_t {
-    char *ptr;
+    const char *ptr;
     size_t len;
 };
 

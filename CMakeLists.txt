@@ -44,7 +44,7 @@ set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} ${SANITIZER_FLAGS}")
 
 #------------------------------------------------------------------------------------------------->
 
-set(SRCS src/hash_functions.cpp src/hash_tables/version_1.cpp)
+set(SRCS src/hash_functions.cpp src/hash_tables/version_1.cpp src/data_functions.cpp)
 add_library(lclib STATIC ${SRCS})
 target_include_directories(lclib PUBLIC "inc")
 add_executable(hash_table.out main.cpp)

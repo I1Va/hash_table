@@ -1,27 +1,44 @@
+#include <cstdlib>
 #include <string.h>
 #include <stdio.h>
 
+#include "general.h"
 #include "general_structs.h"
 #include "hash_table.h"
 #include "hash_functions.h"
+#include "data_functions.h"
 
 const size_t hash_table_sz = 128;
+const char TEXT_PATH[] = "data/text.txt";
+
+const size_t ALIGNMENT = 256;
 
 int main() {
     hash_table_t hash_table = {};
     hash_table_t_ctor(&hash_table, hash_table_sz, polinom_hash_func);
 
-    string_t str1 = {};
-    str1.ptr = "sdsda";
-    str1.len = strlen(str1.ptr);
-    int a = 11231;
+    string_t text = load_text(TEXT_PATH, ALIGNMENT);
+    if (text.ptr == NULL) {
+        debug("load_text '%s' failed\n", TEXT_PATH);
+        return EXIT_FAILURE;
+    }
 
-    hash_table_set_key(&hash_table, str1, &a);
+    store_text_in_hash_table(text, &hash_table);
 
-    void *read = NULL;
-    printf("read : %d\n", hash_table_read_key(&hash_table, str1, &read));
+    while (true) {
+        char bufer[BUFSIZ] = {};
+        scanf("%s", bufer);
+        string_t string = {};
+        string.ptr = bufer;
+        string.len = strnlen(bufer, BUFSIZ);
+        void *data = NULL;
 
-    printf("data : %d\n", *((int *) read));
+        if (hash_table_read_key(&hash_table, string, &data)) {
+            printf("%s found!\n", bufer);
+        } else {
+            printf("%s not found!\n", bufer);
+        }
+    }
 
     hash_table_t_dtor(&hash_table);
     return 0;

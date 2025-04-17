@@ -99,18 +99,38 @@ int hash_table_set_key(hash_table_t *hash_table, string_t key, void *data) {
 
 bool hash_table_read_key(hash_table_t *hash_table, string_t key, void **data) {
     assert(hash_table);
-    assert(data);
 
     unsigned long long table_idx = hash_table->hash_function(key) % hash_table->sz;
 
     list_node_t *cur_node = hash_table->data[table_idx];
     while (cur_node) {
         if (string_eq(cur_node->key, key)) {
-            *data = cur_node->data;
+            if (data) *data = cur_node->data;
+
             return true;
         }
         cur_node = cur_node->next;
     }
 
     return false;
+}
+
+size_t get_list_len(list_node_t *first_node) {
+    size_t len = 0;
+    while (first_node) {
+        len++;
+        first_node = first_node->next;
+    }
+
+    return len;
+}
+
+double get_load_factor(hash_table_t *hash_table) {
+    size_t hash_table_elems = 0;
+
+    for (size_t i = 0; i < hash_table->sz; i++) {
+        hash_table_elems += get_list_len(hash_table->data[i]);
+    }
+
+    return hash_table_elems / (double) (hash_table->sz);
 }

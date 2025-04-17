@@ -22,5 +22,6 @@ void list_dtor(list_node_t *first_node);
 void hash_table_t_dtor(hash_table_t *hash_table);
 int hash_table_set_key(hash_table_t *hash_table, string_t key, void *data);
 bool hash_table_read_key(hash_table_t *hash_table, string_t key, void **data);
+double get_load_factor(hash_table_t *hash_table);
 
 #endif // HASH_TABLE_H

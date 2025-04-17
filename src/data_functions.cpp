@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdint.h>
+#include <immintrin.h>
 
 #include "general_structs.h"
 #include "general.h"
@@ -136,5 +138,35 @@ int store_text_in_hash_table(string_t text, hash_table_t *hash_table) {
         }
     }
 
+    return EXIT_SUCCESS;
+}
+
+int run_tests(const char path[], hash_table_t *hash_table, uint64_t *res_ticks) {
+    assert(path);
+    assert(hash_table);
+    assert(res_ticks);
+
+    FILE *tests_file = fopen(path, "r");
+    if (tests_file == NULL) {
+        debug("failed to open '%s'\n", path);
+        return EXIT_FAILURE;
+    }
+
+    size_t tests_cnt = 0;
+    char bufer[BUFSIZ] = {};
+    string_t string = {};
+    string.ptr = bufer;
+
+    fscanf(tests_file, "%lu", &tests_cnt);
+    uint64_t tests_start_ticks = __rdtsc();
+    for (size_t i = 0; i < tests_cnt; i++) {
+        fscanf(tests_file, "%s", (char *) string.ptr);
+        string.len = strnlen(string.ptr, BUFSIZ);
+
+        hash_table_read_key(hash_table, string, NULL);
+    }
+    uint64_t tests_end_ticks = __rdtsc();
+
+    *res_ticks = (tests_end_ticks - tests_start_ticks);
     return EXIT_SUCCESS;
 }

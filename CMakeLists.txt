@@ -2,6 +2,13 @@
 
 #BUILD-------------------------------------------------------------------------------------------->
 # cmake -DCMAKE_BUILD_TYPE=Debug -S . -B build
+# cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
+
+# cmake -DCMAKE_BUILD_TYPE=Debug -S . -DCMAKE_HASH_TABLE_VERSION="version_1.cpp" -B build
+# cmake -DCMAKE_BUILD_TYPE=Release -S . -DCMAKE_CXX_FLAGS_RELEASE="-O3 -ggdb3 -D NDEBUG " -DCMAKE_HASH_TABLE_VERSION="version_1.cpp" -B build
+# cmake --build ./build
+# ./build/hash_table.out
+
 # VERBOSE=1 cmake --build ./build
 # bear -- cmake --build ./build
 # cmake --build ./build && ./build/hash_table.out
@@ -26,8 +33,6 @@ set(SANITIZER_FLAGS "-fsanitize=address,alignment,bool,bounds,enum,float-cast-ov
 integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,\
 shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr")
 
-set(CMAKE_CXX_FLAGS_DEBUG "-D NDEBUG -O2")
-
 set(CMAKE_CXX_FLAGS_DEBUG "-D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-loop-optimizations       \
 -Wc++14-compat -Wmissing-declarations -Wcast-align -Wcast-qual -Wchar-subscripts -Wconditionally-supported              \
 -Wconversion -Wctor-dtor-privacy -Wempty-body -Wfloat-equal -Wformat-nonliteral -Wformat-security                       \
@@ -44,7 +49,14 @@ set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} ${SANITIZER_FLAGS}")
 
 #------------------------------------------------------------------------------------------------->
 
-set(SRCS src/hash_functions.cpp src/hash_tables/version_1.cpp src/data_functions.cpp)
+#HASH_TABLE_VERSION------------------------------------------------------------------------------->
+
+if(NOT CMAKE_HASH_TABLE_VERSION)
+    set(CMAKE_HASH_TABLE_VERSION version_1.cpp)
+endif()
+#------------------------------------------------------------------------------------------------->
+
+set(SRCS src/hash_functions.cpp src/hash_tables/${CMAKE_HASH_TABLE_VERSION} src/data_functions.cpp)
 add_library(lclib STATIC ${SRCS})
 target_include_directories(lclib PUBLIC "inc")
 add_executable(hash_table.out main.cpp)

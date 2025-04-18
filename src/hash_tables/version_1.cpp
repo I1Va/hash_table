@@ -17,7 +17,7 @@ int hash_table_t_ctor(hash_table_t *hash_table, const size_t sz, hash_function_t
 
     hash_table->data = (list_node_t **) calloc(sz, sizeof(list_node_t *));
     if (hash_table->data == NULL) {
-        debug("hash_table->data calloc failed\n");
+        debug("hash_table->data calloc failed");
         return EXIT_FAILURE;
     }
 
@@ -84,7 +84,7 @@ int hash_table_set_key(hash_table_t *hash_table, string_t key, void *data) {
     list_node_t *new_node = list_node_t_ctor(key, data);
 
     if (!new_node) {
-        debug("list_node_t_ctor failed\n");
+        debug("list_node_t_ctor failed");
         return EXIT_FAILURE;
     }
 
@@ -106,7 +106,6 @@ bool hash_table_read_key(hash_table_t *hash_table, string_t key, void **data) {
     while (cur_node) {
         if (string_eq(cur_node->key, key)) {
             if (data) *data = cur_node->data;
-
             return true;
         }
         cur_node = cur_node->next;

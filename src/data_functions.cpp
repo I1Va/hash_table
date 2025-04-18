@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdint.h>
-#include <immintrin.h>
+#include <errno.h>
 
 #include "general_structs.h"
 #include "general.h"
@@ -16,7 +16,7 @@
 int get_file_sz(const char path[]) {
     struct stat buf = {};
     if (stat(path, &buf) != 0) {
-        debug("file stat '%s' failed\n", path);
+        debug("file stat '%s' failed", path);
         return -1;
     }
 
@@ -35,33 +35,33 @@ string_t load_text(const char path[], const size_t alignment) {
 
     int inp_file_sz = get_file_sz(path);
     if (inp_file_sz < 0) {
-        debug("get_file_sz '%s' failed\n", path);
+        debug("get_file_sz '%s' failed", path);
         CLEAR_MEMORY(exit_mark)
     }
 
     inp_file = fopen(path, "r");
     if (inp_file == NULL) {
-        debug("fopen '%s' failed\n", path);
+        debug("fopen '%s' failed", path);
         CLEAR_MEMORY(exit_mark)
     }
 
     if (alignment == 0) {
         aligned_text.ptr = (const char *) calloc(inp_file_sz, sizeof(char));
         if (aligned_text.ptr == NULL) {
-            debug("calloc failed\n");
+            debug("calloc failed");
             CLEAR_MEMORY(exit_mark)
         }
     } else {
         aligned_text.ptr = (const char *) aligned_alloc(alignment, fill_to_intergral_multiple(inp_file_sz, alignment) * sizeof(char));
         if (aligned_text.ptr == NULL) {
-            debug("aligned_alloc failed\n");
+            debug("aligned_alloc failed");
             CLEAR_MEMORY(exit_mark)
         }
     }
 
     aligned_text.len = (size_t) inp_file_sz;
     if (fread((unsigned char *) aligned_text.ptr, sizeof(char), aligned_text.len, inp_file) < aligned_text.len) {
-        debug("fread '%s' failed\n", path);
+        debug("fread '%s' failed", path);
         CLEAR_MEMORY(exit_mark)
     }
 
@@ -104,14 +104,14 @@ size_t get_word_len(const char *start, const char *end) {
 
 void print_string_t(const string_t string) {
     if (string.ptr == NULL) {
-        printf("NULL, len=%lu\n", string.len);
+        printf("NULL, len=%lu", string.len);
     } else {
          printf("'");
 
         for (size_t i = 0; i < string.len; i++) {
             putc(string.ptr[i], stdout);
         }
-        printf("', len=%lu\n", string.len);
+        printf("', len=%lu", string.len);
     }
 }
 
@@ -133,7 +133,7 @@ int store_text_in_hash_table(string_t text, hash_table_t *hash_table) {
         cur_ptr += string.len;
 
         if (hash_table_set_key(hash_table, string, NULL) != 0) {
-            debug("hash_table_set_key failed\n");
+            debug("hash_table_set_key failed");
             return EXIT_FAILURE;
         }
     }
@@ -141,32 +141,46 @@ int store_text_in_hash_table(string_t text, hash_table_t *hash_table) {
     return EXIT_SUCCESS;
 }
 
-int run_tests(const char path[], hash_table_t *hash_table, uint64_t *res_ticks) {
+int run_tests(const char path[], hash_table_t *hash_table) {
     assert(path);
     assert(hash_table);
-    assert(res_ticks);
 
-    FILE *tests_file = fopen(path, "r");
+    FILE    *tests_file = fopen(path, "r");
+    size_t  tests_cnt = 0;
+
+    char        bufer[BUFSIZ] = {};
+    string_t    string = {};
+
     if (tests_file == NULL) {
-        debug("failed to open '%s'\n", path);
-        return EXIT_FAILURE;
+        debug("failed to open '%s'", path);
+        CLEAR_MEMORY(exit_mark)
     }
 
-    size_t tests_cnt = 0;
-    char bufer[BUFSIZ] = {};
-    string_t string = {};
     string.ptr = bufer;
 
-    fscanf(tests_file, "%lu", &tests_cnt);
-    uint64_t tests_start_ticks = __rdtsc();
+    if (fscanf(tests_file, "%lu", &tests_cnt) != 1) {
+        debug("tests_cnt fscanf error");
+        CLEAR_MEMORY(exit_mark)
+    }
+
     for (size_t i = 0; i < tests_cnt; i++) {
-        fscanf(tests_file, "%s", (char *) string.ptr);
+        int fscanf_res = fscanf(tests_file, "%s", (char *) string.ptr);
+        if (fscanf_res != 1) {
+            debug("string.ptr fscanf failed : fscanf_res='%d', errno='%s'", fscanf_res, strerror(errno));
+            CLEAR_MEMORY(exit_mark)
+        }
+
         string.len = strnlen(string.ptr, BUFSIZ);
 
-        hash_table_read_key(hash_table, string, NULL);
+        bool read_res = hash_table_read_key(hash_table, string, NULL);
+        assert(read_res);
     }
-    uint64_t tests_end_ticks = __rdtsc();
 
-    *res_ticks = (tests_end_ticks - tests_start_ticks);
+    fclose(tests_file);
     return EXIT_SUCCESS;
+
+    exit_mark:
+    if (tests_file) fclose(tests_file);
+
+    return EXIT_FAILURE;
 }

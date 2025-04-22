@@ -1,3 +1,5 @@
 build/*
 docs/*
+data/*
+debug/*
 compile_commands.json

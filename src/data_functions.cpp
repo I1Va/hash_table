@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cstring>
 #include <ctype.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -6,10 +7,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include "general_structs.h"
 #include "general.h"
-#include "hash_table.h"
+#include "hash_funcs_32b.h"
+#include "hash_table_32b.h"
 #include "data_functions.h"
 
 int get_file_sz(const char path[]) {
@@ -22,21 +25,11 @@ int get_file_sz(const char path[]) {
     return (int) buf.st_size;
 }
 
-size_t fill_to_intergral_multiple(size_t base, size_t divider) {
-    return base + (divider - base %divider);
-}
-
-string_t load_text(const char path[], const size_t alignment) {
+tests_data_t load_text(const char path[]) {
     assert(path);
 
-    string_t aligned_text = {};
+    tests_data_t tests_data = {};
     FILE *inp_file = NULL;
-
-    int inp_file_sz = get_file_sz(path);
-    if (inp_file_sz < 0) {
-        debug("get_file_sz '%s' failed", path);
-        CLEAR_MEMORY(exit_mark)
-    }
 
     inp_file = fopen(path, "r");
     if (inp_file == NULL) {
@@ -44,34 +37,33 @@ string_t load_text(const char path[], const size_t alignment) {
         CLEAR_MEMORY(exit_mark)
     }
 
-    if (alignment == 0) {
-        aligned_text.ptr = (char *) calloc((size_t) inp_file_sz, sizeof(char));
-        if (aligned_text.ptr == NULL) {
-            debug("calloc failed");
-            CLEAR_MEMORY(exit_mark)
-        }
-    } else {
-        aligned_text.ptr = (char *) aligned_alloc(alignment, fill_to_intergral_multiple((size_t) inp_file_sz, alignment) * sizeof(char));
-        if (aligned_text.ptr == NULL) {
-            debug("aligned_alloc failed");
-            CLEAR_MEMORY(exit_mark)
-        }
-    }
-
-    aligned_text.len = (size_t) inp_file_sz;
-    if (fread(((unsigned char *) aligned_text.ptr), sizeof(char), aligned_text.len, inp_file) < aligned_text.len) {
-        debug("fread '%s' failed", path);
+    if (fscanf(inp_file, "%lu", &tests_data.words_cnt) != 1) {
+        debug("fscanf tests_data.words_cnt failed");
         CLEAR_MEMORY(exit_mark)
     }
 
-    fclose(inp_file);
+    tests_data.words_32b = (char *) aligned_alloc(tests_data.word_nmemb, tests_data.words_cnt * tests_data.word_nmemb);
+    if (tests_data.words_32b == NULL) {
+        debug("aligned_alloc failed");
+        CLEAR_MEMORY(exit_mark)
+    }
+    memset(tests_data.words_32b, 0, tests_data.words_cnt * tests_data.word_nmemb);
 
-    return aligned_text;
+    for (size_t i = 0; i < tests_data.words_cnt; i++) {
+        char *cur_word_ptr = tests_data.words_32b + i * tests_data.word_nmemb;
+        if (fscanf(inp_file, "%31s", cur_word_ptr) != 1) {
+            debug("fscanf cur_word_ptr failed");
+            CLEAR_MEMORY(exit_mark)
+        }
+    }
+
+    fclose(inp_file);
+    return tests_data;
 
     exit_mark:
 
     if (inp_file) fclose(inp_file);
-    if (aligned_text.ptr) free((void *) aligned_text.ptr);
+    if (tests_data.words_32b) free(tests_data.words_32b);
 
     return {};
 }
@@ -114,48 +106,48 @@ void print_string_t(const string_t string) {
     }
 }
 
-int store_text_in_hash_table(string_t text, hash_table_t *hash_table) {
-    assert(text.ptr);
-    assert(hash_table);
-
-    char *cur_ptr = text.ptr;
-    char *end_ptr = text.ptr + text.len;
-    string_t string = {};
-
-    while (cur_ptr != end_ptr) {
-        cur_ptr = find_first_alpha_ptr(cur_ptr, end_ptr);
-        if (cur_ptr == NULL) break;
-
-        string.ptr = cur_ptr;
-        string.len = get_word_len(cur_ptr, end_ptr);
-
-        cur_ptr += string.len;
-
-        if (hash_table_set_key(hash_table, string, NULL) != 0) {
-            debug("hash_table_set_key failed");
-            return EXIT_FAILURE;
-        }
-    }
-
-    return EXIT_SUCCESS;
+void print_hash_of_key(hash_table_32b_t *hash_table, char *key32_b, char *extra_info) {
+    printf("%s | key : '%s', hash : '%d'\n", extra_info, key32_b, hash_table->hash_function(key32_b));
 }
 
-int run_tests(const char path[], hash_table_t *hash_table) {
+
+void print_word_32b(char *word_32b) {
+    printf("'%s' = [", word_32b);
+    for (int i = 0; i < 32; i++) {
+        printf("%.2d|", word_32b[i]);
+    }
+    printf("]\n");
+}
+
+
+bool store_text_in_hash_table(tests_data_t tests_data, hash_table_32b_t *hash_table) {
+    assert(tests_data.words_32b);
+    for (size_t i = 0; i < tests_data.words_cnt; i++) {
+        char *key_32b = tests_data.words_32b + i * tests_data.word_nmemb;
+
+        if (!hash_table_32b_insert_key(hash_table, key_32b)) {
+            debug("hash_table_set_key failed");
+            return false;
+        }
+
+    }
+    return true;
+}
+
+bool run_tests(const char path[], hash_table_32b_t *hash_table) {
     assert(path);
     assert(hash_table);
 
     FILE    *tests_file = fopen(path, "r");
     size_t  tests_cnt = 0;
 
-    char        bufer[BUFSIZ] = {};
-    string_t    string = {};
+    char bufer[32] = {};
+    char *key_32b  = bufer;
 
     if (tests_file == NULL) {
         debug("failed to open '%s'", path);
         CLEAR_MEMORY(exit_mark)
     }
-
-    string.ptr = bufer;
 
     if (fscanf(tests_file, "%lu", &tests_cnt) != 1) {
         debug("tests_cnt fscanf error");
@@ -163,24 +155,26 @@ int run_tests(const char path[], hash_table_t *hash_table) {
     }
 
     for (size_t i = 0; i < tests_cnt; i++) {
-        int fscanf_res = fscanf(tests_file, "%s", (char *) string.ptr);
+        memset(key_32b, 0, 32);
+        int fscanf_res = fscanf(tests_file, "%s", key_32b);
         if (fscanf_res != 1) {
             debug("string.ptr fscanf failed : fscanf_res='%d', errno='%s'", fscanf_res, strerror(errno));
             CLEAR_MEMORY(exit_mark)
         }
 
-        string.len = strnlen(string.ptr, BUFSIZ);
+        list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
 
-        list_node_t *read_key_res = hash_table_read_key(hash_table, string);
-
-        if (read_key_res == NULL) return EXIT_FAILURE;
+        if (read_key_res == NULL) {
+            debug("word '%s' hasn't found\n", key_32b);
+            CLEAR_MEMORY(exit_mark)
+        }
     }
 
     fclose(tests_file);
-    return EXIT_SUCCESS;
+    return true;
 
     exit_mark:
     if (tests_file) fclose(tests_file);
 
-    return EXIT_FAILURE;
+    return false;
 }

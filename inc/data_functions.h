@@ -10,15 +10,20 @@
 #include <stdint.h>
 
 #include "general_structs.h"
-#include "hash_table.h"
+#include "hash_table_32b.h"
+
+struct tests_data_t {
+    char *words_32b;
+    size_t words_cnt;
+    const size_t word_nmemb = 32;
+};
 
 int get_file_sz(const char path[]);
-string_t load_text(const char path[], const size_t alignment=0);
+tests_data_t load_text(const char path[]);
 const char *next_alpha(const char *start, const char *end);
 size_t get_word_len(const char *start, const char *end);
-int store_text_in_hash_table(string_t text, hash_table_t *hash_table);
-int run_tests(const char path[], hash_table_t *hash_table);
-size_t fill_to_intergral_multiple(size_t base, size_t divider);
+bool store_text_in_hash_table(tests_data_t tests_data, hash_table_32b_t *hash_table);
+bool run_tests(const char path[], hash_table_32b_t *hash_table);
 void print_string_t(const string_t string);
 char *find_first_alpha_ptr(char *start, char *end);
 

@@ -58,7 +58,7 @@ endif
 
 override CFLAGS += $(COMMONINC)
 
-CSRC = src/data_functions.cpp src/hash_functions.cpp src/hash_table.cpp src/measure_funcs.cpp main.cpp
+CSRC = src/data_functions.cpp src/hash_funcs_32b.cpp src/hash_table_32b.cpp src/measure_funcs.cpp main.cpp
 
 #/---------------------------SUBMODULES--------------------\#
 SUBMODULES =
@@ -89,8 +89,11 @@ $(DEPS) : $(OUT_O_DIR)/%.d : %.cpp
 	@mkdir -p $(@D)
 	@$(CC) -E $(CFLAGS) $< -MM -MT $(@:.d=.o) > $@
 
-.PHONY: clean
+.PHONY: launch
+launch:
+	./$(OUT_O_DIR)/$(OUTFILE_NAME)
 
+.PHONY: clean
 clean:
 	@rm -rf $(COBJ) $(DEPS) $(OUT_O_DIR)/*.out $(OUT_O_DIR)/*.log
 

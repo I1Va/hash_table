@@ -11,7 +11,6 @@
 
 #include "general_structs.h"
 #include "general.h"
-#include "hash_funcs_32b.h"
 #include "hash_table_32b.h"
 #include "data_functions.h"
 
@@ -105,20 +104,6 @@ void print_string_t(const string_t string) {
         printf("', len=%lu", string.len);
     }
 }
-
-void print_hash_of_key(hash_table_32b_t *hash_table, char *key32_b, char *extra_info) {
-    printf("%s | key : '%s', hash : '%d'\n", extra_info, key32_b, hash_table->hash_function(key32_b));
-}
-
-
-void print_word_32b(char *word_32b) {
-    printf("'%s' = [", word_32b);
-    for (int i = 0; i < 32; i++) {
-        printf("%.2d|", word_32b[i]);
-    }
-    printf("]\n");
-}
-
 
 bool store_text_in_hash_table(tests_data_t tests_data, hash_table_32b_t *hash_table) {
     assert(tests_data.words_32b);

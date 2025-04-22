@@ -1,0 +1,28 @@
+#ifndef BENCHMARK_FUNCS_H
+#define BENCHMARK_FUNCS_H
+
+#include <time.h>
+#include <stdint.h>
+#include <assert.h>
+
+#include "hash_table_32b.h"
+#include "data_functions.h"
+#include "args_proc.h"
+
+
+struct time_point_t {
+    uint64_t    tick_point;
+    clock_t     clock_point;
+};
+
+const size_t HASH_TABLE_SZ = 1024 * 8;
+const char TEXT_PATH[] = "data/text.txt";
+const char TESTS_PATH[] = "data/tests.txt";
+
+time_point_t set_time_point();
+bool measure_testing_time(hash_table_32b_t *hash_table, tests_data_t tests_data, time_point_t *duration);
+bool delete_file(const char path[]);
+bool run_benchmarks(config_t *config);
+hash_function_32b_t choose_hash_function(char hash_function_name[]);
+
+#endif // BENCHMARK_FUNCS_H

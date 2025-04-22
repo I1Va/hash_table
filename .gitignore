@@ -2,4 +2,5 @@ build/*
 docs/*
 data/*
 debug/*
+.cache/*
 compile_commands.json

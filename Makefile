@@ -41,6 +41,8 @@ SANITIZER_FLAGS = -fsanitize=address,alignment,bool,bounds,enum,float-cast-overf
 integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,$\
 shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 
+LAUNCH_FLAGS ?=
+
 EXTRA_FLAGS =
 
 OUTFILE_NAME = hash_table.out
@@ -58,7 +60,7 @@ endif
 
 override CFLAGS += $(COMMONINC)
 
-CSRC = src/data_functions.cpp src/hash_funcs_32b.cpp src/hash_table_32b.cpp src/measure_funcs.cpp main.cpp
+CSRC = src/data_functions.cpp src/hash_funcs_32b.cpp src/hash_table_32b.cpp src/benchmark_funcs.cpp src/args_proc.cpp main.cpp
 
 #/---------------------------SUBMODULES--------------------\#
 SUBMODULES =
@@ -91,7 +93,7 @@ $(DEPS) : $(OUT_O_DIR)/%.d : %.cpp
 
 .PHONY: launch
 launch:
-	./$(OUT_O_DIR)/$(OUTFILE_NAME)
+	./$(OUT_O_DIR)/$(OUTFILE_NAME) $(LAUNCH_FLAGS)
 
 .PHONY: clean
 clean:

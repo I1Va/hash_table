@@ -20,20 +20,26 @@ static void init_crc32_tab() {
 }
 
 uint32_t crc32_hash_func(char *key_32b) {
-    uint32_t sum = 0;
-    for (int i = 0; i < 32; i++) {
-        sum += (132 + key_32b[i] * 127);
+    static int initialized = 0;
+    if (!initialized) {
+        init_crc32_tab();
+        initialized = 1;
     }
-    return sum;
-    // static int initialized = 0;
-    // if (!initialized) {
-    //     init_crc32_tab();
-    //     initialized = 1;
-    // }
 
-    // uint32_t crc = ~0U;
-    // for (size_t i = 0; i < 32; ++i) {
-    //     crc = (crc >> 8) ^ crc32_tab[(crc ^ (unsigned char)key_32b[i]) & 0xFF];
-    // }
-    // return ~crc;
+    uint32_t crc = ~0U;
+    for (size_t i = 0; i < 32; ++i) {
+        crc = (crc >> 8) ^ crc32_tab[(crc ^ (unsigned char)key_32b[i]) & 0xFF];
+    }
+    return ~crc;
+}
+
+uint32_t polinom_hash_func(char *key_32b) {
+    uint32_t hash = 0;
+    uint32_t hash_mult = 17;
+    uint32_t hash_add = 131;
+    for (size_t i = 0; i < 32; i++) {
+        hash += (uint32_t) key_32b[i] * hash_mult + hash_add;
+    }
+
+    return hash;
 }

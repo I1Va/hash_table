@@ -6,10 +6,10 @@
 
 #include "general.h"
 #include "hash_table_32b.h"
-#include "hash_funcs_32b.h"
+#include "hash_funcs.h"
 
 
-bool hash_table_32b_t_ctor(hash_table_32b_t *hash_table, const size_t sz, hash_function_32b_t hash_function) {
+bool hash_table_32b_t_ctor(hash_table_32b_t *hash_table, const size_t sz, hash_function_t hash_function) {
     assert(hash_table);
     assert(hash_function);
 
@@ -66,7 +66,7 @@ size_t get_list_len(list_node_t *first_node) {
     return len;
 }
 
-double get_load_factor(hash_table_32b_t *hash_table) {
+double hash_table_32b_get_load_factor(hash_table_32b_t *hash_table) {
     size_t hash_table_elems = 0;
 
     for (size_t i = 0; i < hash_table->sz; i++) {
@@ -87,7 +87,7 @@ void hash_table_32b_dump_bucket_sizes(FILE *stream, hash_table_32b_t *hash_table
 bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
     assert(hash_table);
 
-    unsigned long long table_idx = hash_table->hash_function(key_32b) % hash_table->sz;
+    unsigned long long table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
 
     list_node_t *cur_node = hash_table->data[table_idx];
     list_node_t *last_node = NULL;
@@ -116,7 +116,7 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
 list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key_32b) {
     assert(hash_table);
 
-    unsigned long long table_idx = hash_table->hash_function(key_32b) % hash_table->sz;
+    unsigned long long table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
 
     list_node_t *cur_node = hash_table->data[table_idx];
     while (cur_node) {

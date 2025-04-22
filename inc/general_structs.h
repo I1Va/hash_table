@@ -9,5 +9,7 @@ struct string_t {
     size_t len;
 };
 
+const size_t word_32b_nmemb = 32;
+
 
 #endif // GENERAL_STRUCTS_H

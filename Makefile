@@ -60,7 +60,7 @@ endif
 
 override CFLAGS += $(COMMONINC)
 
-CSRC = src/data_functions.cpp src/hash_funcs_32b.cpp src/hash_table_32b.cpp src/benchmark_funcs.cpp src/args_proc.cpp main.cpp
+CSRC = src/data_functions.cpp src/hash_funcs.cpp src/hash_table_32b.cpp src/benchmark_funcs.cpp src/args_proc.cpp main.cpp
 
 #/---------------------------SUBMODULES--------------------\#
 SUBMODULES =

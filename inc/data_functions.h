@@ -15,7 +15,6 @@
 struct tests_data_t {
     char *words_32b;
     size_t words_cnt;
-    const size_t word_nmemb = 32;
 };
 
 int get_file_sz(const char path[]);

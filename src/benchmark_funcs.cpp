@@ -5,21 +5,29 @@
 
 #include "args_proc.h"
 #include "general.h"
-#include "hash_funcs_32b.h"
+#include "hash_funcs.h"
+#include "hash_table_32b.h"
 #include "benchmark_funcs.h"
 
 
-hash_function_32b_t choose_hash_function(char hash_function_name[]) {
+hash_function_t choose_hash_function(char hash_function_name[]) {
     assert(hash_function_name);
 
-    hash_function_32b_t DEFAULT_HASH_FUNCTION = crc32_hash_func;
+    hash_function_t DEFAULT_HASH_FUNCTION = crc32_hash_func;
 
-    if (strncmp(hash_function_name, "cr32", MAX_CONFIG_NAME_SIZE)) {
+    if (strncmp(hash_function_name, "cr32", MAX_CONFIG_NAME_SIZE) == 0) {
         return crc32_hash_func;
     }
-    if (strncmp(hash_function_name, "poli", MAX_CONFIG_NAME_SIZE)) {
-        return polinom_hash_func;
+    if (strncmp(hash_function_name, "poly", MAX_CONFIG_NAME_SIZE) == 0) {
+        return polynom_hash_func;
     }
+    if (strncmp(hash_function_name, "fchar", MAX_CONFIG_NAME_SIZE) == 0) {
+        return first_char_hash_func;
+    }
+    if (strncmp(hash_function_name, "fnv", MAX_CONFIG_NAME_SIZE) == 0) {
+        return fnv1a_hash;
+    }
+
 
     return DEFAULT_HASH_FUNCTION;
 }
@@ -71,7 +79,48 @@ bool delete_file(const char path[]) {
     return true;
 }
 
-bool run_benchmarks(config_t *config) {
+bool run_hashes_benchmarks(config_t *config) {
+    assert(config);
+
+    tests_data_t tests_data = {};
+    FILE *benchmarks_res_file = NULL;
+    hash_table_32b_t hash_table = {};
+
+    tests_data = load_text(TEXT_PATH);
+    if (tests_data.words_32b == NULL) {
+        debug("load_text '%s' failed", TEXT_PATH);
+        return false;
+    }
+
+    delete_file(config->output_path);
+
+    benchmarks_res_file = fopen(config->output_path, "w");
+    if (benchmarks_res_file == NULL) {
+        debug("failed to open '%s'", config->output_path);
+        CLEAR_MEMORY(exit_mark)
+    }
+
+    if (!hash_table_32b_t_ctor(&hash_table, HASH_TABLE_SZ, choose_hash_function(config->hash_func_name))) {
+        debug("hash_table_32b_t_ctor failed");
+        CLEAR_MEMORY(exit_mark)
+    }
+
+    store_text_in_hash_table(tests_data, &hash_table);
+    hash_table_32b_dump_bucket_sizes(benchmarks_res_file, &hash_table);
+
+    free(tests_data.words_32b);
+    fclose(benchmarks_res_file);
+    return true;
+
+    exit_mark:
+    hash_table_t_dtor(&hash_table);
+    if (tests_data.words_32b) free(tests_data.words_32b);
+    if (benchmarks_res_file) fclose(benchmarks_res_file);
+
+    return false;
+}
+
+bool run_versions_benchmarks(config_t *config) {
     assert(config);
 
     tests_data_t tests_data = load_text(TEXT_PATH);
@@ -92,14 +141,17 @@ bool run_benchmarks(config_t *config) {
 
     for (int i = 0; i < config->measures_cnt; i++) {
         hash_table = {};
-        hash_table_32b_t_ctor(&hash_table, HASH_TABLE_SZ, choose_hash_function(config->hash_func_name));
+        if (!hash_table_32b_t_ctor(&hash_table, HASH_TABLE_SZ, choose_hash_function(config->hash_func_name))) {
+            debug("hash_table_32b_t_ctor failed");
+            CLEAR_MEMORY(exit_mark_free_hash_table)
+        }
 
         time_point_t duration = {};
         if (!measure_testing_time(&hash_table, tests_data, &duration)) {
             debug("test iteration <%d> failed", i);
             CLEAR_MEMORY(exit_mark_free_hash_table)
         }
-
+        // printf("ticks: %lu\n", duration.tick_point);
         fprintf(benchmarks_res_file, "%lu\n", duration.tick_point);
 
         hash_table_t_dtor(&hash_table);
@@ -113,6 +165,51 @@ bool run_benchmarks(config_t *config) {
     exit_mark_free_hash_table:
     hash_table_t_dtor(&hash_table);
     exit_mark:
+    if (tests_data.words_32b) free(tests_data.words_32b);
+    if (benchmarks_res_file) fclose(benchmarks_res_file);
+
+    return false;
+}
+
+bool run_load_factor_benchmarks(config_t *config) {
+    assert(config);
+
+    tests_data_t tests_data = {};
+    FILE *benchmarks_res_file = NULL;
+    hash_table_32b_t hash_table = {};
+    double load_factor = 0;
+
+    tests_data = load_text(TEXT_PATH);
+    if (tests_data.words_32b == NULL) {
+        debug("load_text '%s' failed", TEXT_PATH);
+        return false;
+    }
+
+    delete_file(config->output_path);
+
+    benchmarks_res_file = fopen(config->output_path, "w");
+    if (benchmarks_res_file == NULL) {
+        debug("failed to open '%s'", config->output_path);
+        CLEAR_MEMORY(exit_mark)
+    }
+
+    if (!hash_table_32b_t_ctor(&hash_table, HASH_TABLE_SZ, choose_hash_function(config->hash_func_name))) {
+        debug("hash_table_32b_t_ctor failed");
+        CLEAR_MEMORY(exit_mark)
+    }
+
+    store_text_in_hash_table(tests_data, &hash_table);
+
+    load_factor = hash_table_32b_get_load_factor(&hash_table);
+    fprintf(benchmarks_res_file, "%lf\n", load_factor);
+
+
+    free(tests_data.words_32b);
+    fclose(benchmarks_res_file);
+    return true;
+
+    exit_mark:
+    hash_table_t_dtor(&hash_table);
     if (tests_data.words_32b) free(tests_data.words_32b);
     if (benchmarks_res_file) fclose(benchmarks_res_file);
 

@@ -9,6 +9,8 @@ const size_t MAX_CONFIG_NAME_SIZE = 64;
 
 const char DEFAULT_CONFIG_HASH_FUNC[] = "cr32";
 const char DEFAULT_CONFIG_OUTPUT_PATH[] = "./benchmark.res";
+const char DEFAULT_CONFIG_BENCHMARK[] = "ver";
+
 const int  DEFAULT_CONFIG_MEASURE_CNT = 1;
 
 typedef struct {
@@ -25,6 +27,7 @@ typedef struct {
     int measures_cnt;
     char hash_func_name[MAX_CONFIG_NAME_SIZE] = {};
     char output_path[MAX_CONFIG_NAME_SIZE] = {};
+    char benchmark[MAX_CONFIG_NAME_SIZE] = {};
 } config_t;
 
 void scan_argv(config_t *config, const int argc, const char *argv[]);

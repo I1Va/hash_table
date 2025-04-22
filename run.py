@@ -2,6 +2,8 @@ import os
 import random
 import sys
 import math
+import tempfile
+import time
 
 # FUNCTIONS FOR TESTS GENERATION
 def get_words_list(text_path):
@@ -34,23 +36,15 @@ def prepare_testing_data(text_path, text_words_cnt, tests_cnt):
     write_text("./data/text.txt", words_list)
     write_tests("./data/tests.txt", words_list, tests_cnt)
 
+# GENERAL_BENCHMARKING_FUNCS
+def execute_hash_tables_benchmarks(compile_flags, launch_flags):
+    os.system("make clean")
+    time.sleep(1)
+    os.system(f'make CFLAGS="{compile_flags}"')
+    os.system(f'make launch LAUNCH_FLAGS="{launch_flags}"')
 
-# FUNCS FOR BENCHMARKING
-# VERSION 1
-# Unoptimized, No compile flags
 
-#VERSION 2
-# Unoptimazed, "O3, -march=native -mtune=native" compile flags
-
-#VERSION 3
-# Intrinsic hash func optiization, VERSION 2 compile flags
-
-#VERSION 4
-# Strncmp optimization, VERSION 2 compile flags
-
-#VERSION 5
-# Asm insertion optimization, VERSION 2 compile flags
-
+# FUNCS FOR VERSIONS BENCHMARKING
 def get_measure_result(measures_arr):
     n = len(measures_arr)
     measures_arr = list(map(float, measures_arr))
@@ -68,9 +62,7 @@ def get_version_testing_time(compile_flags, launch_flags):
 
     os.system(f'echo -n > {temp_res_file_name}')
 
-    os.system("make clean")
-    os.system(f'make CFLAGS="{compile_flags}"')
-    os.system(f'make launch LAUNCH_FLAGS="{launch_flags}"')
+    execute_hash_tables_benchmarks(compile_flags, launch_flags)
 
     measures_arr = []
     with open(temp_res_file_name, "r") as file:
@@ -80,8 +72,12 @@ def get_version_testing_time(compile_flags, launch_flags):
 
     return get_measure_result(measures_arr)
 
-def launch_benchmarks():
-    outfile_path = "./versions_benchmark.out"
+def launch_versions_benchmarks():
+    outfile_dir = "results"
+    outfile_path = f'./{outfile_dir}/versions_benchmark.out'
+
+    os.system(f'mkdir -p {outfile_dir}')
+
     measures_cnt = 100
 
     VERSIONS_DESCRIPTIONS = [
@@ -92,7 +88,7 @@ def launch_benchmarks():
         ["VERSION 4", "-O3 -march=native -mtune=native -D INTRINSIC -D MY_STRCMP -D ASM_INSERTION"]
     ]
 
-    default_launch_flags = f'--runs={measures_cnt} --hash_func="cr32"'
+    default_launch_flags = f'--runs={measures_cnt} --hash_func="cr32" --benchmark="ver"'
 
     with open(outfile_path, "w") as file:
         for version in VERSIONS_DESCRIPTIONS:
@@ -101,6 +97,34 @@ def launch_benchmarks():
             file.write(f'{version_name} : {get_version_testing_time(compile_flags, default_launch_flags)}\n')
 
 
+# FUNCS FOR HASH FUNCTIONS BENCHMARKING
+def make_hash_res_file(outfile_path, hash_func_name):
+    compile_flags = ""
+    launch_flags = f' --output="{outfile_path}" --hash_func="{hash_func_name}" --benchmark="hash"'
+
+    execute_hash_tables_benchmarks(compile_flags, launch_flags)
+
+def launch_hashes_benchmarks():
+    hash_res_dir_path = "./results/hash_funcs"
+    os.system(f'mkdir -p {hash_res_dir_path}')
+
+    hash_funcs_names = ["poly", "cr32", "fchar", "fnv"]
+
+    for name in hash_funcs_names:
+        make_hash_res_file(f'{hash_res_dir_path}/{name}', name)
+
+
+# FUNCS FOR LOAD FACTOR BENCHMARKING
+
+def launch_load_factor_benchmark():
+    load_factor_folder = "./results"
+
+    os.system(f'mkdir -p {load_factor_folder}')
+
+    compile_flags = ""
+    launch_flags = f'--benchmark="load" --output="{load_factor_folder}/load_factor"'
+    execute_hash_tables_benchmarks(compile_flags, launch_flags)
+
 
 
 if __name__ == "__main__":
@@ -108,13 +132,19 @@ if __name__ == "__main__":
         exit(0)
 
     if (sys.argv[1] == "gen_tests"):
-        print("gen_tests")
+        print("launch 'gen_tests'")
         text_path = "./war_and_peace.txt"
-        text_words_cnt = 10 ** 3
-        tests_cnt = 10 ** 3
+        text_words_cnt = 10 ** 4 * 4
+        tests_cnt = 10 ** 4 * 4
         prepare_testing_data(text_path, text_words_cnt, tests_cnt)
-    elif (sys.argv[1] == "launch_benchmarks"):
-        print("launch_benchmarks")
-        launch_benchmarks()
+    elif (sys.argv[1] == "versions_benchmarks"):
+        print("launch 'versions_benchmarks'")
+        launch_versions_benchmarks()
+    elif (sys.argv[1] == "hashes_benchmarks"):
+        print("launch 'hashes_benchmarks'")
+        launch_hashes_benchmarks()
+    elif (sys.argv[1] == "load_factor_benchmark"):
+        print("launch 'load_factor_benchmarks'")
+        launch_load_factor_benchmark()
     else:
-        print(f'unknown command "{sys.argv[1]}". Exit.')
+        print(f'run.py : unknown command "{sys.argv[1]}". Exit.')

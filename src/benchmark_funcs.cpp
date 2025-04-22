@@ -67,9 +67,9 @@ bool measure_testing_time(hash_table_32b_t *hash_table, tests_data_t tests_data,
 bool delete_file(const char path[]) {
     assert(path);
 
-    char command[MAX_CONFIG_NAME_SIZE] = {};
+    char command[MAX_CONFIG_NAME_SIZE * 2] = {};
 
-    snprintf(command, MAX_CONFIG_NAME_SIZE, "rm -f %s", path);
+    snprintf(command, MAX_CONFIG_NAME_SIZE * 2, "rm -f %s", path);
 
     if (system(command) == -1) {
         debug("'%s' failed, errno='%s'", command, strerror(errno));
@@ -130,14 +130,17 @@ bool run_versions_benchmarks(config_t *config) {
     }
 
     delete_file(config->output_path);
-    FILE *benchmarks_res_file = fopen(config->output_path, "a");
-
     hash_table_32b_t hash_table = {};
-
-    if (benchmarks_res_file == NULL) {
-        debug("failed to open '%s'", config->output_path);
-        CLEAR_MEMORY(exit_mark)
+    FILE *benchmarks_res_file = NULL;
+    if (strnlen(config->benchmark, MAX_CONFIG_NAME_SIZE) != 0) {
+        benchmarks_res_file = fopen(config->output_path, "a");
+        if (benchmarks_res_file == NULL) {
+            debug("failed to open '%s'", config->output_path);
+            CLEAR_MEMORY(exit_mark)
+        }
     }
+
+
 
     for (int i = 0; i < config->measures_cnt; i++) {
         hash_table = {};
@@ -151,8 +154,11 @@ bool run_versions_benchmarks(config_t *config) {
             debug("test iteration <%d> failed", i);
             CLEAR_MEMORY(exit_mark_free_hash_table)
         }
-        // printf("ticks: %lu\n", duration.tick_point);
-        fprintf(benchmarks_res_file, "%lu\n", duration.tick_point);
+
+        if (benchmarks_res_file) fprintf(benchmarks_res_file, "%lu\n", duration.tick_point);
+        if (config->print_state) printf("ticks : %lu\n", duration.tick_point);
+
+
 
         hash_table_t_dtor(&hash_table);
     }
@@ -187,10 +193,12 @@ bool run_load_factor_benchmarks(config_t *config) {
 
     delete_file(config->output_path);
 
-    benchmarks_res_file = fopen(config->output_path, "w");
-    if (benchmarks_res_file == NULL) {
-        debug("failed to open '%s'", config->output_path);
-        CLEAR_MEMORY(exit_mark)
+    if (strnlen(config->benchmark, MAX_CONFIG_NAME_SIZE) != 0) {
+        benchmarks_res_file = fopen(config->output_path, "a");
+        if (benchmarks_res_file == NULL) {
+            debug("failed to open '%s'", config->output_path);
+            CLEAR_MEMORY(exit_mark)
+        }
     }
 
     if (!hash_table_32b_t_ctor(&hash_table, HASH_TABLE_SZ, choose_hash_function(config->hash_func_name))) {
@@ -201,8 +209,8 @@ bool run_load_factor_benchmarks(config_t *config) {
     store_text_in_hash_table(tests_data, &hash_table);
 
     load_factor = hash_table_32b_get_load_factor(&hash_table);
-    fprintf(benchmarks_res_file, "%lf\n", load_factor);
-
+    if (benchmarks_res_file) fprintf(benchmarks_res_file, "%lf\n", load_factor);
+    if (config->print_state) printf("load_factor : %lf\n", load_factor);
 
     free(tests_data.words_32b);
     fclose(benchmarks_res_file);

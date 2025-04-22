@@ -41,7 +41,7 @@ tests_data_t load_text(const char path[]) {
         CLEAR_MEMORY(exit_mark)
     }
 
-    tests_data.words_32b = (char *) aligned_alloc(word_32b_nmemb, tests_data.words_cnt * word_32b_nmemb);
+    tests_data.words_32b = (char *) aligned_alloc(64, tests_data.words_cnt * word_32b_nmemb);
     if (tests_data.words_32b == NULL) {
         debug("aligned_alloc failed");
         CLEAR_MEMORY(exit_mark)

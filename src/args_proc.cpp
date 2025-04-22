@@ -16,15 +16,16 @@ void scan_argv(config_t *config, const int argc, const char *argv[]) {
     // DEFAULT OPTIONS
     snprintf(config->hash_func_name, MAX_CONFIG_NAME_SIZE - 1, DEFAULT_CONFIG_HASH_FUNC);
     snprintf(config->output_path, MAX_CONFIG_NAME_SIZE - 1, DEFAULT_CONFIG_OUTPUT_PATH);
-    snprintf(config->benchmark, MAX_CONFIG_NAME_SIZE - 1, DEFAULT_CONFIG_BENCHMARK);
     config->measures_cnt = DEFAULT_CONFIG_MEASURE_CNT;
+    config->print_state = 1;
 
     opt_data options[] =
     {
         {"-r", "--runs", "%d", &config->measures_cnt},
         {"-h", "--hash_func", "%s", config->hash_func_name},
         {"-o", "--output", "%s", &config->output_path},
-        {"-b", "--benchmark", "%s", &config->benchmark}
+        {"-b", "--benchmark", "%s", &config->benchmark},
+        {"-p", "--print", "%d", &config->print_state}
     };
 
     size_t n_options = sizeof(options) / sizeof(opt_data);

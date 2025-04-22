@@ -41,7 +41,6 @@ def prepare_testing_data(text_path, text_words_cnt, tests_cnt):
 # GENERAL_BENCHMARKING_FUNCS
 def execute_hash_tables_benchmarks(compile_flags, launch_flags):
     os.system("make clean")
-    time.sleep(1)
     os.system(f'make CFLAGS="{compile_flags}"')
     os.system(f'make launch LAUNCH_FLAGS="{launch_flags}"')
 
@@ -82,23 +81,21 @@ def get_version_testing_time(compile_flags, launch_flags):
 
     return get_measure_result(measures_arr)
 
-def launch_versions_benchmarks():
+def launch_versions_benchmarks(measures_cnt):
     outfile_dir = "results"
     outfile_path = f'./{outfile_dir}/versions_benchmark.out'
 
     os.system(f'mkdir -p {outfile_dir}')
 
-    measures_cnt = 100
-
     VERSIONS_DESCRIPTIONS = [
-        ["VERSION 0", ""],
+        ["VERSION 0", "-march=native"],
         ["VERSION 1", "-O3 -march=native -mtune=native"],
-        ["VERSION 2", "-O3 -march=native -mtune=native -D INTRINSIC"],
+        ["VERSION 2", "-O3 -march=native -mtune=native -D INTRINSIC_HASH"],
         ["VERSION 3", "-O3 -march=native -mtune=native -D INTRINSIC -D MY_STRCMP"],
         ["VERSION 4", "-O3 -march=native -mtune=native -D INTRINSIC -D MY_STRCMP -D ASM_INSERTION"]
     ]
 
-    default_launch_flags = f'--runs={measures_cnt} --hash_func="cr32" --benchmark="ver"'
+    default_launch_flags = f'--runs={measures_cnt} --hash_func=cr32 --benchmark=ver --print=0'
 
     with open(outfile_path, "w") as file:
         for version in VERSIONS_DESCRIPTIONS:
@@ -111,7 +108,7 @@ def launch_versions_benchmarks():
 HASH_FUNCS_NAMES = ["poly", "cr32", "fchar", "fnv"]
 def make_hash_res_file(outfile_path, hash_func_name):
     compile_flags = ""
-    launch_flags = f' --output="{outfile_path}" --hash_func="{hash_func_name}" --benchmark="hash"'
+    launch_flags = f' --output={outfile_path} --hash_func={hash_func_name} --benchmark=hash --print=0'
 
     execute_hash_tables_benchmarks(compile_flags, launch_flags)
 
@@ -173,6 +170,10 @@ def launch_load_factor_benchmark():
     execute_hash_tables_benchmarks(compile_flags, launch_flags)
 
 
+# python3 run.py gen_tests
+# python3 run.py versions_benchmarks
+# python3 run.py hashes_benchmarks
+# python3 run.py load_factor_benchmark
 
 if __name__ == "__main__":
     if (len(sys.argv) <= 1):
@@ -186,7 +187,8 @@ if __name__ == "__main__":
         prepare_testing_data(text_path, text_words_cnt, tests_cnt)
     elif (sys.argv[1] == "versions_benchmarks"):
         print("launch 'versions_benchmarks'")
-        launch_versions_benchmarks()
+        measures_cnt = 30
+        launch_versions_benchmarks(measures_cnt)
     elif (sys.argv[1] == "hashes_benchmarks"):
         print("launch 'hashes_benchmarks'")
         launch_hashes_benchmarks()

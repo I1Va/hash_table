@@ -1,8 +1,5 @@
-
-# make MODE=DEBUG
-# make
-# make MODE=DEBUG clean
-# make clean
+# make clean && make CFLAGS="-O0"
+# make clean && make CFLAGS="-O3 -march=native -mtune=native"
 
 MODE ?= RELEAZE
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -24,7 +21,7 @@ CFLAGS ?= -O2 -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloa
 	-Wcast-qual -Wconversion -Wctor-dtor-privacy -Wempty-body -Wformat-security -Wformat=2 \
 	-Wignored-qualifiers -Wlogical-op -Wno-missing-field-initializers -Wnon-virtual-dtor   \
 	-Woverloaded-virtual -Wpointer-arith -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing \
-	-Wstrict-null-sentinel -Wtype-limits -Wwrite-strings
+	-Wstrict-null-sentinel -Wtype-limits -Wwrite-strings -march=native
 
 CDEBFLAGS = -D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-loop-optimizations \
 -Wc++14-compat -Wmissing-declarations -Wcast-align -Wcast-qual -Wchar-subscripts -Wconditionally-supported \
@@ -67,7 +64,6 @@ SUBMODULES =
 COMMONINC += $(addsuffix /inc,-I./$(SUBMODULES))
 CSRC += $(wildcard $(addsuffix /src,$(SUBMODULES))/*.cpp)
 #/---------------------------SUBMODULES--------------------\#
-
 
 
 COBJ := $(addprefix $(OUT_O_DIR)/,$(CSRC:.cpp=.o))

@@ -28,6 +28,7 @@ typedef struct {
     char hash_func_name[MAX_CONFIG_NAME_SIZE] = {};
     char output_path[MAX_CONFIG_NAME_SIZE] = {};
     char benchmark[MAX_CONFIG_NAME_SIZE] = {};
+    int print_state;
 } config_t;
 
 void scan_argv(config_t *config, const int argc, const char *argv[]);

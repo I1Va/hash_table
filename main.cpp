@@ -1,10 +1,7 @@
-#include <cassert>
-#include <cstdlib>
-#include <ctime>
+#include <assert.h>
+#include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdint.h>
-#include <immintrin.h>
 
 #include "args_proc.h"
 #include "benchmark_funcs.h"

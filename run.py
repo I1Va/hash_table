@@ -4,6 +4,8 @@ import sys
 import math
 import tempfile
 import time
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # FUNCTIONS FOR TESTS GENERATION
 def get_words_list(text_path):
@@ -43,18 +45,26 @@ def execute_hash_tables_benchmarks(compile_flags, launch_flags):
     os.system(f'make CFLAGS="{compile_flags}"')
     os.system(f'make launch LAUNCH_FLAGS="{launch_flags}"')
 
-
-# FUNCS FOR VERSIONS BENCHMARKING
-def get_measure_result(measures_arr):
+def get_standard_deviation(measures_arr):
     n = len(measures_arr)
-    measures_arr = list(map(float, measures_arr))
 
-    average_value = sum(measures_arr) / n
+    average_value = float(sum(measures_arr)) / n
     deviation_squares_sum = sum([(average_value - xi)**2 for xi in measures_arr])
     standard_deviation = math.sqrt(1.0 / (n - 1) * deviation_squares_sum)
+
+    return standard_deviation
+
+def get_measure_result(measures_arr):
+    n = len(measures_arr)
+
+    average_value = float(sum(measures_arr)) / n
+    standard_deviation = get_standard_deviation(measures_arr)
     standard_error = standard_deviation / math.sqrt(n)
 
     return f'{round(average_value, 5)} ± {round(standard_error, 5)} (error : {round(standard_error / average_value * 100, 2)}%)'
+
+
+# FUNCS FOR VERSIONS BENCHMARKING
 
 def get_version_testing_time(compile_flags, launch_flags):
     temp_res_file_name = "./temp_benchmark_res.out"
@@ -98,21 +108,58 @@ def launch_versions_benchmarks():
 
 
 # FUNCS FOR HASH FUNCTIONS BENCHMARKING
+HASH_FUNCS_NAMES = ["poly", "cr32", "fchar", "fnv"]
 def make_hash_res_file(outfile_path, hash_func_name):
     compile_flags = ""
     launch_flags = f' --output="{outfile_path}" --hash_func="{hash_func_name}" --benchmark="hash"'
 
     execute_hash_tables_benchmarks(compile_flags, launch_flags)
 
+    with open(outfile_path, "r") as file:
+        measures_arr = list(map(int, file.read().split()))
+
+    standard_deviation = get_standard_deviation(measures_arr)
+    with open(outfile_path, "a") as file:
+        file.write(f'standard_deviation {standard_deviation}')
+
+def build_hash_plot(data_path, img_path, hash_func_name):
+    with open(data_path, "r") as file:
+        measures_arr = list(map(int, file.readline().split()))
+        standard_deviation = float(file.readline().split()[1])
+
+    plt.style.use('seaborn-v0_8-darkgrid')
+    sns.set_palette("husl")
+
+    plt.figure(figsize=(14, 7))
+
+    bars = plt.bar(range(len(measures_arr)), measures_arr,
+                edgecolor='black', linewidth=0.7,
+                alpha=0.8, width=0.9)
+
+    plt.title(f'Хэш функция : "{hash_func_name}"', fontsize=14, pad=20)
+    plt.xlabel(f'Индекс ячейки\nСтандартное отколонение : {round(standard_deviation, 5)}', fontsize=12, labelpad=10)
+    plt.ylabel('Кол-во коллизий', fontsize=12, labelpad=10)
+    plt.yticks(fontsize=10)
+
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+    plt.tight_layout()
+
+    plt.savefig(f'{img_path}')
+
 def launch_hashes_benchmarks():
-    hash_res_dir_path = "./results/hash_funcs"
-    os.system(f'mkdir -p {hash_res_dir_path}')
+    hash_data_dir_path = "./results/hash_funcs/data"
+    hash_img_dir_path = "./results/hash_funcs/img"
 
-    hash_funcs_names = ["poly", "cr32", "fchar", "fnv"]
+    os.system(f'mkdir -p {hash_data_dir_path}')
+    os.system(f'mkdir -p {hash_img_dir_path}')
 
-    for name in hash_funcs_names:
-        make_hash_res_file(f'{hash_res_dir_path}/{name}', name)
+    for name in HASH_FUNCS_NAMES:
+        hash_data_file_path = f'{hash_data_dir_path}/{name}.data'
+        hash_img_file_path = f'{hash_img_dir_path}/{name}.png'
 
+        make_hash_res_file(hash_data_file_path, name)
+        build_hash_plot(hash_data_file_path, hash_img_file_path, name)
 
 # FUNCS FOR LOAD FACTOR BENCHMARKING
 

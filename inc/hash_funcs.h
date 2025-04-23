@@ -10,6 +10,7 @@ uint64_t polynom_hash_func(char *key, const size_t len);
 uint64_t crc32_hash_func(char *key, const size_t len);
 uint64_t first_char_hash_func(char *key, const size_t len __attribute__((unused)));
 uint64_t fnv1a_hash(char *key, const size_t len);
+uint64_t crc32_intrinsic_hash_func(char *key, const size_t len __attribute__((unused)));
 
 
 #endif // HASH_FUNCTIONS_H

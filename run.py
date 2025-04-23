@@ -8,14 +8,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # CONFIG
-HASH_FUNCS_NAMES = ["poly", "cr32", "fchar", "fnv"]
+HASH_FUNCS_NAMES = ["poly", "cr32", "cr32_intrinsic", "fchar", "fnv"]
 
 VERSIONS_DESCRIPTIONS = [
-        ["VERSION_0", "-march=native"],
-        ["VERSION_1", "-O3 -march=native -mtune=native"],
-        ["VERSION_2", "-O3 -march=native -mtune=native -D INTRINSIC_HASH"],
-        ["VERSION_3", "-O3 -march=native -mtune=native -D INTRINSIC_HASH -D MY_STREQ"],
-        ["VERSION_4", "-O3 -march=native -mtune=native -D INTRINSIC_HASH -D MY_STREQ -D ASM_INSERTION"]
+        ["VERSION_0", "-O0 -march=native", " --hash=cr32 "],
+        ["VERSION_1", "-O3 -march=native -mtune=native", " --hash=cr32 "],
+        ["VERSION_2", "-O3 -march=native -mtune=native", " --hash=cr32_intrinsic "],
+        ["VERSION_3", "-O3 -march=native -mtune=native -D MY_STREQ", " --hash=cr32_intrinsic "],
+        ["VERSION_4", "-O3 -march=native -mtune=native -D MY_STREQ -D ASM_INSERTION", " --hash=cr32_intrinsic "]
     ]
 
 
@@ -53,6 +53,7 @@ def prepare_testing_data(text_path, text_words_cnt, tests_cnt):
 
 # GENERAL_BENCHMARKING_FUNCS
 def execute_hash_tables_benchmarks(compile_flags, launch_flags):
+    print(f'compile_flags : {compile_flags}')
     os.system("make clean")
     os.system(f'make CFLAGS="{compile_flags}"')
     os.system(f'make launch LAUNCH_FLAGS="{launch_flags}"')
@@ -99,25 +100,28 @@ def launch_versions_benchmarks(measures_cnt):
 
     os.system(f'mkdir -p {outfile_dir}')
 
-    default_launch_flags = f'--runs={measures_cnt} --hash_func=cr32 --benchmark=ver --print=0'
+    default_launch_flags = f' --runs={measures_cnt} --benchmark=ver --print=0 '
 
     with open(outfile_path, "w") as file:
         for version in VERSIONS_DESCRIPTIONS:
             version_name = version[0]
             print(f'LAUNCH {version_name}')
+
             compile_flags = version[1]
-            file.write(f'{version_name} : {get_version_testing_time(compile_flags, default_launch_flags)}\n')
+            launch_flags = version[2] + default_launch_flags
+            file.write(f'{version_name} : {get_version_testing_time(compile_flags, launch_flags)}\n')
+
 
 
 # FUNCS FOR HASH FUNCTIONS BENCHMARKING
 def make_hash_res_file(outfile_path, hash_func_name):
-    compile_flags = ""
-    launch_flags = f' --output={outfile_path} --hash_func={hash_func_name} --benchmark=hash --print=0'
+    compile_flags = "-O3 -march=native -mtune=native"
+    launch_flags = f' --output={outfile_path} --hash={hash_func_name} --benchmark=hash --print=0'
 
     execute_hash_tables_benchmarks(compile_flags, launch_flags)
 
     with open(outfile_path, "r") as file:
-        measures_arr = list(map(int, file.read().split()))
+        measures_arr = list(map(int, file.readline().split()))
 
     standard_deviation = get_standard_deviation(measures_arr)
     with open(outfile_path, "a") as file:
@@ -126,6 +130,7 @@ def make_hash_res_file(outfile_path, hash_func_name):
 def build_hash_plot(data_path, img_path, hash_func_name):
     with open(data_path, "r") as file:
         measures_arr = list(map(int, file.readline().split()))
+        ticks_cnt = float(file.readline().split()[1])
         standard_deviation = float(file.readline().split()[1])
 
     plt.style.use('seaborn-v0_8-darkgrid')
@@ -138,7 +143,7 @@ def build_hash_plot(data_path, img_path, hash_func_name):
                 alpha=0.8, width=0.9)
 
     plt.title(f'Хэш функция : "{hash_func_name}"', fontsize=14, pad=20)
-    plt.xlabel(f'Индекс ячейки\nСтандартное отколонение : {round(standard_deviation, 5)}', fontsize=12, labelpad=10)
+    plt.xlabel(f'Индекс ячейки\nСтандартное отколонение : {round(standard_deviation, 5)}\nTicks : {ticks_cnt}', fontsize=12, labelpad=10)
     plt.ylabel('Кол-во коллизий', fontsize=12, labelpad=10)
     plt.yticks(fontsize=10)
 
@@ -231,7 +236,7 @@ if __name__ == "__main__":
     elif (sys.argv[1] == "versions_benchmarks"):
         print("launch 'versions_benchmarks'")
         measures_cnt = 20
-        if (len(sys.argv) >= 2):
+        if (len(sys.argv) >= 3):
             measures_cnt = int(sys.argv[2])
 
         launch_versions_benchmarks(measures_cnt)

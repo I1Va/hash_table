@@ -2,7 +2,6 @@
 #include <immintrin.h>
 #include <stdint.h>
 
-#include "general_structs.h"
 #include "hash_funcs.h"
 
 
@@ -34,10 +33,8 @@ uint64_t fnv1a_hash(char *key, const size_t len) {
     return hash;
 }
 
-#ifndef INTRINSIC_HASH
-
 uint64_t crc32_hash_func(char *key, const size_t len) {
-    const uint64_t CR32_POLY = 0x04C11DB7;
+    const uint64_t CR32_POLY = 0x11EDC6F41;
     const unsigned char *buffer = (const unsigned char*) key;
     uint64_t crc = (uint64_t) -1;
 
@@ -53,16 +50,14 @@ uint64_t crc32_hash_func(char *key, const size_t len) {
     return ~crc;
 }
 
-#else
 #pragma GCC diagnostic ignored "-Wcast-align"
-uint64_t crc32_hash_func(char *key, const size_t len __attribute__((unused))) {
+uint64_t crc32_intrinsic_hash_func(char *key, const size_t len __attribute__((unused))) {
     uint64_t crc = 0;
 
-    crc = _mm_crc32_u64(crc, *(uint64_t*) key + 0); // FIXME: cast
+    crc = _mm_crc32_u64(crc, *(uint64_t*) key + 0);
     crc = _mm_crc32_u64(crc, *(uint64_t*) key + 1);
     crc = _mm_crc32_u64(crc, *(uint64_t*) key + 2);
     crc = _mm_crc32_u64(crc, *(uint64_t*) key + 3);
 
     return crc;
 }
-#endif // INTRINSIC_HASH

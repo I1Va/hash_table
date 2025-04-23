@@ -22,7 +22,7 @@ void scan_argv(config_t *config, const int argc, const char *argv[]) {
     opt_data options[] =
     {
         {"-r", "--runs", "%d", &config->measures_cnt},
-        {"-h", "--hash_func", "%s", config->hash_func_name},
+        {"-h", "--hash", "%s", config->hash_func_name},
         {"-o", "--output", "%s", &config->output_path},
         {"-b", "--benchmark", "%s", &config->benchmark},
         {"-p", "--print", "%d", &config->print_state}

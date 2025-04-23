@@ -99,7 +99,6 @@ void hash_table_32b_dump_bucket_sizes(FILE *stream, hash_table_32b_t *hash_table
     fprintf(stream, "\n");
 }
 
-
 bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
     assert(hash_table);
 

@@ -8,7 +8,7 @@ const size_t MAX_OPT_NAME_SZ = 64;
 const size_t MAX_CONFIG_NAME_SIZE = 64;
 
 const char DEFAULT_CONFIG_HASH_FUNC[] = "cr32";
-const char DEFAULT_CONFIG_OUTPUT_PATH[] = "./benchmark.res";
+const char DEFAULT_CONFIG_OUTPUT_PATH[] = "";
 const char DEFAULT_CONFIG_BENCHMARK[] = "ver";
 
 const int  DEFAULT_CONFIG_MEASURE_CNT = 1;

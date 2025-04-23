@@ -129,10 +129,11 @@ bool run_versions_benchmarks(config_t *config) {
         return false;
     }
 
-    delete_file(config->output_path);
+
     hash_table_32b_t hash_table = {};
     FILE *benchmarks_res_file = NULL;
-    if (strnlen(config->benchmark, MAX_CONFIG_NAME_SIZE) != 0) {
+    if (strnlen(config->output_path, MAX_CONFIG_NAME_SIZE) > 0) {
+        delete_file(config->output_path);
         benchmarks_res_file = fopen(config->output_path, "a");
         if (benchmarks_res_file == NULL) {
             debug("failed to open '%s'", config->output_path);
@@ -158,13 +159,11 @@ bool run_versions_benchmarks(config_t *config) {
         if (benchmarks_res_file) fprintf(benchmarks_res_file, "%lu\n", duration.tick_point);
         if (config->print_state) printf("ticks : %lu\n", duration.tick_point);
 
-
-
         hash_table_t_dtor(&hash_table);
     }
 
     free(tests_data.words_32b);
-    fclose(benchmarks_res_file);
+    if (benchmarks_res_file) fclose(benchmarks_res_file);
     return true;
 
 
@@ -191,9 +190,8 @@ bool run_load_factor_benchmarks(config_t *config) {
         return false;
     }
 
-    delete_file(config->output_path);
-
-    if (strnlen(config->benchmark, MAX_CONFIG_NAME_SIZE) != 0) {
+    if (strnlen(config->output_path, MAX_CONFIG_NAME_SIZE) > 0) {
+        delete_file(config->output_path);
         benchmarks_res_file = fopen(config->output_path, "a");
         if (benchmarks_res_file == NULL) {
             debug("failed to open '%s'", config->output_path);

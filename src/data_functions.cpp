@@ -14,6 +14,8 @@
 #include "hash_table_32b.h"
 #include "data_functions.h"
 
+static const size_t TESTS_DATA_T_ALIGNMENT = 32;
+
 int get_file_sz(const char path[]) {
     struct stat buf = {};
     if (stat(path, &buf) != 0) {
@@ -41,15 +43,15 @@ tests_data_t load_text(const char path[]) {
         CLEAR_MEMORY(exit_mark)
     }
 
-    tests_data.words_32b = (char *) aligned_alloc(64, tests_data.words_cnt * word_32b_nmemb);
+    tests_data.words_32b = (char *) aligned_alloc(TESTS_DATA_T_ALIGNMENT, tests_data.words_cnt * WORD_32B_NMEMB);
     if (tests_data.words_32b == NULL) {
         debug("aligned_alloc failed");
         CLEAR_MEMORY(exit_mark)
     }
-    memset(tests_data.words_32b, 0, tests_data.words_cnt * word_32b_nmemb);
+    memset(tests_data.words_32b, 0, tests_data.words_cnt * WORD_32B_NMEMB);
 
     for (size_t i = 0; i < tests_data.words_cnt; i++) {
-        char *cur_word_ptr = tests_data.words_32b + i * word_32b_nmemb;
+        char *cur_word_ptr = tests_data.words_32b + i * WORD_32B_NMEMB;
         if (fscanf(inp_file, "%31s", cur_word_ptr) != 1) {
             debug("fscanf cur_word_ptr failed");
             CLEAR_MEMORY(exit_mark)
@@ -108,7 +110,7 @@ void print_string_t(const string_t string) {
 bool store_text_in_hash_table(tests_data_t tests_data, hash_table_32b_t *hash_table) {
     assert(tests_data.words_32b);
     for (size_t i = 0; i < tests_data.words_cnt; i++) {
-        char *key_32b = tests_data.words_32b + i * word_32b_nmemb;
+        char *key_32b = tests_data.words_32b + i * WORD_32B_NMEMB;
 
         if (!hash_table_32b_insert_key(hash_table, key_32b)) {
             debug("hash_table_set_key failed");
@@ -126,8 +128,11 @@ bool run_tests(const char path[], hash_table_32b_t *hash_table) {
     FILE    *tests_file = fopen(path, "r");
     size_t  tests_cnt = 0;
 
-    char bufer[32] = {};
-    char *key_32b  = bufer;
+    char *key_32b = (char *) aligned_alloc(TESTS_DATA_T_ALIGNMENT, WORD_32B_NMEMB);
+    if (key_32b == NULL) {
+        debug("aligned_alloc failed");
+        CLEAR_MEMORY(exit_mark)
+    }
 
     if (tests_file == NULL) {
         debug("failed to open '%s'", path);
@@ -138,6 +143,8 @@ bool run_tests(const char path[], hash_table_32b_t *hash_table) {
         debug("tests_cnt fscanf error");
         CLEAR_MEMORY(exit_mark)
     }
+
+
 
     for (size_t i = 0; i < tests_cnt; i++) {
         memset(key_32b, 0, 32);
@@ -155,11 +162,14 @@ bool run_tests(const char path[], hash_table_32b_t *hash_table) {
         }
     }
 
-    fclose(tests_file);
+
+    if (key_32b) free(key_32b);
+    if (tests_file) fclose(tests_file);
     return true;
 
     exit_mark:
     if (tests_file) fclose(tests_file);
+    if (key_32b) free(key_32b);
 
     return false;
 }

@@ -15,7 +15,7 @@ void scan_argv(config_t *config, const int argc, const char *argv[]) {
 
     // DEFAULT OPTIONS
     snprintf(config->hash_func_name, MAX_CONFIG_NAME_SIZE - 1, DEFAULT_CONFIG_HASH_FUNC);
-    snprintf(config->output_path, MAX_CONFIG_NAME_SIZE - 1, DEFAULT_CONFIG_OUTPUT_PATH);
+    snprintf(config->benchmark, MAX_CONFIG_NAME_SIZE - 1, DEFAULT_CONFIG_BENCHMARK);
     config->measures_cnt = DEFAULT_CONFIG_MEASURE_CNT;
     config->print_state = 1;
 

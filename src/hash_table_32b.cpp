@@ -7,6 +7,22 @@
 #include "general.h"
 #include "hash_table_32b.h"
 #include "hash_funcs.h"
+#include "data_functions.h"
+
+
+inline int asm_streq_32b(char *key_32b_1, char *key_32b_2) {
+    return (streq_32b(key_32b_1, key_32b_2) == 0);
+}
+
+inline int c_streq_32b(char *key_32b_1, char *key_32b_2) {
+    return (strncmp(key_32b_1, key_32b_2, 32) == 0);
+}
+
+#ifdef MY_STREQ
+const streq_func_t str_eq_func = asm_streq_32b;
+#else
+const streq_func_t str_eq_func = c_streq_32b;
+#endif // MY_STREQ
 
 
 bool hash_table_32b_t_ctor(hash_table_32b_t *hash_table, const size_t sz, hash_function_t hash_function) {
@@ -93,7 +109,7 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
     list_node_t *last_node = NULL;
     while (cur_node) {
         last_node = cur_node;
-        if (strncmp(key_32b, cur_node->key, 32) == 0) return true;
+        if (str_eq_func(key_32b, cur_node->key)) return true;
         cur_node = cur_node->next;
     }
 
@@ -120,7 +136,7 @@ list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key_32b
 
     list_node_t *cur_node = hash_table->data[table_idx];
     while (cur_node) {
-        if (strncmp(key_32b, cur_node->key, 32) == 0) return cur_node;
+        if (str_eq_func(key_32b, cur_node->key)) return cur_node;
         cur_node = cur_node->next;
     }
 

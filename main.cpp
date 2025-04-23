@@ -5,6 +5,8 @@
 
 #include "args_proc.h"
 #include "benchmark_funcs.h"
+#include "data_functions.h"
+
 
 int main(const int argc, const char *argv[]) {
     config_t config = {};

@@ -7,6 +7,19 @@ import time
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# CONFIG
+HASH_FUNCS_NAMES = ["poly", "cr32", "fchar", "fnv"]
+
+VERSIONS_DESCRIPTIONS = [
+        ["VERSION_0", "-march=native"],
+        ["VERSION_1", "-O3 -march=native -mtune=native"],
+        ["VERSION_2", "-O3 -march=native -mtune=native -D INTRINSIC_HASH"],
+        ["VERSION_3", "-O3 -march=native -mtune=native -D INTRINSIC_HASH -D MY_STREQ"],
+        ["VERSION_4", "-O3 -march=native -mtune=native -D INTRINSIC_HASH -D MY_STREQ -D ASM_INSERTION"]
+    ]
+
+
+
 # FUNCTIONS FOR TESTS GENERATION
 def get_words_list(text_path):
     with open(text_path, 'r', encoding='utf-8') as file:
@@ -64,7 +77,6 @@ def get_measure_result(measures_arr):
 
 
 # FUNCS FOR VERSIONS BENCHMARKING
-
 def get_version_testing_time(compile_flags, launch_flags):
     temp_res_file_name = "./temp_benchmark_res.out"
     launch_flags += f' --output={temp_res_file_name} '
@@ -87,25 +99,17 @@ def launch_versions_benchmarks(measures_cnt):
 
     os.system(f'mkdir -p {outfile_dir}')
 
-    VERSIONS_DESCRIPTIONS = [
-        ["VERSION 0", "-march=native"],
-        ["VERSION 1", "-O3 -march=native -mtune=native"],
-        ["VERSION 2", "-O3 -march=native -mtune=native -D INTRINSIC_HASH"],
-        ["VERSION 3", "-O3 -march=native -mtune=native -D INTRINSIC -D MY_STRCMP"],
-        ["VERSION 4", "-O3 -march=native -mtune=native -D INTRINSIC -D MY_STRCMP -D ASM_INSERTION"]
-    ]
-
     default_launch_flags = f'--runs={measures_cnt} --hash_func=cr32 --benchmark=ver --print=0'
 
     with open(outfile_path, "w") as file:
         for version in VERSIONS_DESCRIPTIONS:
             version_name = version[0]
+            print(f'LAUNCH {version_name}')
             compile_flags = version[1]
             file.write(f'{version_name} : {get_version_testing_time(compile_flags, default_launch_flags)}\n')
 
 
 # FUNCS FOR HASH FUNCTIONS BENCHMARKING
-HASH_FUNCS_NAMES = ["poly", "cr32", "fchar", "fnv"]
 def make_hash_res_file(outfile_path, hash_func_name):
     compile_flags = ""
     launch_flags = f' --output={outfile_path} --hash_func={hash_func_name} --benchmark=hash --print=0'
@@ -159,7 +163,6 @@ def launch_hashes_benchmarks():
         build_hash_plot(hash_data_file_path, hash_img_file_path, name)
 
 # FUNCS FOR LOAD FACTOR BENCHMARKING
-
 def launch_load_factor_benchmark():
     load_factor_folder = "./results"
 
@@ -170,10 +173,33 @@ def launch_load_factor_benchmark():
     execute_hash_tables_benchmarks(compile_flags, launch_flags)
 
 
+# FUNCS FOR ALL VERSIONS BUILDING
+def build_all_versions():
+    makefile_build_dir_path = "./build"
+    versions_build_dir_path = "./results/versions"
+
+    os.system(f'mkdir -p {versions_build_dir_path}')
+
+    for version in VERSIONS_DESCRIPTIONS:
+        version_name = version[0]
+        compile_flags = version[1]
+
+        os.system("make clean")
+        os.system(f'make CFLAGS="{compile_flags}" OUTFILE_NAME="{version_name}.out"')
+        os.system(f'mv {makefile_build_dir_path}/{version_name}.out {versions_build_dir_path}/{version_name}.out')
+
+
+# # FUNCS FOR PROFILING
+# def launch_all_versions_profiling():
+
+
+
+
 # python3 run.py gen_tests
 # python3 run.py versions_benchmarks
 # python3 run.py hashes_benchmarks
 # python3 run.py load_factor_benchmark
+# python3 run.py build_all_versions
 
 if __name__ == "__main__":
     if (len(sys.argv) <= 1):
@@ -187,7 +213,7 @@ if __name__ == "__main__":
         prepare_testing_data(text_path, text_words_cnt, tests_cnt)
     elif (sys.argv[1] == "versions_benchmarks"):
         print("launch 'versions_benchmarks'")
-        measures_cnt = 30
+        measures_cnt = 20
         launch_versions_benchmarks(measures_cnt)
     elif (sys.argv[1] == "hashes_benchmarks"):
         print("launch 'hashes_benchmarks'")
@@ -195,5 +221,8 @@ if __name__ == "__main__":
     elif (sys.argv[1] == "load_factor_benchmark"):
         print("launch 'load_factor_benchmarks'")
         launch_load_factor_benchmark()
+    elif (sys.argv[1] == "build_all_versions"):
+        print("launch 'build_all_versions'")
+        build_all_versions()
     else:
         print(f'run.py : unknown command "{sys.argv[1]}". Exit.')

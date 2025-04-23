@@ -192,7 +192,8 @@ def build_all_versions():
 # FUNCS FOR PROFILING
 
 def profile_exec_file(exec_target, output_file):
-    profiler_flags = f'-g -T --running-time --call-graph dwarf --output={output_file} -e cache-references,cache-misses,instructions,cycles -F 99 {exec_target}'
+    #profiler_flags = f'-g -T --running-time --call-graph dwarf --output={output_file} -e cache-references,cache-misses,instructions,cycles -F 99 {exec_target}'
+    profiler_flags = f'-g --call-graph dwarf --output={output_file} -- {exec_target}'
     os.system(f'sudo perf record {profiler_flags}')
     os.system(f'sudo chmod +r {output_file}')
 
@@ -230,6 +231,9 @@ if __name__ == "__main__":
     elif (sys.argv[1] == "versions_benchmarks"):
         print("launch 'versions_benchmarks'")
         measures_cnt = 20
+        if (len(sys.argv) >= 2):
+            measures_cnt = int(sys.argv[2])
+
         launch_versions_benchmarks(measures_cnt)
     elif (sys.argv[1] == "hashes_benchmarks"):
         print("launch 'hashes_benchmarks'")
@@ -243,5 +247,7 @@ if __name__ == "__main__":
     elif (sys.argv[1] == "versions_profiling"):
         print("launch 'versions_profiling'")
         launch_all_versions_profiling()
+    # elif (sys.argv[1] == "all"):
+
     else:
         print(f'run.py : unknown command "{sys.argv[1]}". Exit.')

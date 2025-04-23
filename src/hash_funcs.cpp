@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <immintrin.h>
 #include <stdint.h>
 
@@ -7,10 +8,11 @@
 
 uint64_t polynom_hash_func(char *key, const size_t len) {
     uint64_t hash = 0;
-    uint64_t hash_mult = 17;
-    uint64_t hash_add = 131;
+    uint64_t hash_mult = 255;
+    uint64_t hash_mod = (uint64_t) 1e9 + 7;
+
     for (size_t i = 0; i < len; i++) {
-        hash += (uint64_t) key[i] * hash_mult + hash_add;
+        hash = (hash * hash_mult + (uint64_t) key[i]) % hash_mod;
     }
 
     return hash;

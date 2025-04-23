@@ -189,9 +189,25 @@ def build_all_versions():
         os.system(f'mv {makefile_build_dir_path}/{version_name}.out {versions_build_dir_path}/{version_name}.out')
 
 
-# # FUNCS FOR PROFILING
-# def launch_all_versions_profiling():
+# FUNCS FOR PROFILING
 
+def profile_exec_file(exec_target, output_file):
+    profiler_flags = f'-g -T --running-time --call-graph dwarf --output={output_file} -e cache-references,cache-misses,instructions,cycles -F 99 {exec_target}'
+    os.system(f'sudo perf record {profiler_flags}')
+    os.system(f'sudo chmod +r {output_file}')
+
+def launch_all_versions_profiling():
+    versions_dir_path = "./results/versions"
+    versions_perf_dir_path = f'{versions_dir_path}/perf_data'
+    os.system(f'rm -rf {versions_perf_dir_path}')
+    os.system(f'mkdir {versions_perf_dir_path}')
+
+    for version in VERSIONS_DESCRIPTIONS:
+        version_name = version[0]
+        version_perf_data_path = f'{versions_perf_dir_path}/perf_{version_name}.data'
+        version_exec_target_path = f'{versions_dir_path}/{version_name}.out'
+
+        profile_exec_file(version_exec_target_path, version_perf_data_path)
 
 
 
@@ -224,5 +240,8 @@ if __name__ == "__main__":
     elif (sys.argv[1] == "build_all_versions"):
         print("launch 'build_all_versions'")
         build_all_versions()
+    elif (sys.argv[1] == "versions_profiling"):
+        print("launch 'versions_profiling'")
+        launch_all_versions_profiling()
     else:
         print(f'run.py : unknown command "{sys.argv[1]}". Exit.')

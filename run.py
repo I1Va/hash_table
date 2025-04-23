@@ -143,7 +143,7 @@ def build_hash_plot(data_path, img_path, hash_func_name):
                 alpha=0.8, width=0.9)
 
     plt.title(f'Хэш функция : "{hash_func_name}"', fontsize=14, pad=20)
-    plt.xlabel(f'Индекс ячейки\nСтандартное отколонение : {round(standard_deviation, 5)}\nTicks : {ticks_cnt}', fontsize=12, labelpad=10)
+    plt.xlabel(f'Индекс ячейки\nСтандартное отклонение : {round(standard_deviation, 5)}\nTicks : {ticks_cnt}', fontsize=12, labelpad=10)
     plt.ylabel('Кол-во коллизий', fontsize=12, labelpad=10)
     plt.yticks(fontsize=10)
 
@@ -196,11 +196,9 @@ def build_all_versions():
 
 # FUNCS FOR PROFILING
 
-def profile_exec_file(exec_target, output_file):
-    #profiler_flags = f'-g -T --running-time --call-graph dwarf --output={output_file} -e cache-references,cache-misses,instructions,cycles -F 99 {exec_target}'
-    profiler_flags = f'-g --call-graph dwarf --output={output_file} -- {exec_target}'
+def profiler_exec_file(profiler_flags, outfile_path):
     os.system(f'sudo perf record {profiler_flags}')
-    os.system(f'sudo chmod +r {output_file}')
+    os.system(f'sudo chmod +r {outfile_path}')
 
 def launch_all_versions_profiling():
     versions_dir_path = "./results/versions"
@@ -208,12 +206,20 @@ def launch_all_versions_profiling():
     os.system(f'rm -rf {versions_perf_dir_path}')
     os.system(f'mkdir {versions_perf_dir_path}')
 
+
+
+
     for version in VERSIONS_DESCRIPTIONS:
+
         version_name = version[0]
         version_perf_data_path = f'{versions_perf_dir_path}/perf_{version_name}.data'
         version_exec_target_path = f'{versions_dir_path}/{version_name}.out'
 
-        profile_exec_file(version_exec_target_path, version_perf_data_path)
+        profiler_flags = f'-g -T --running-time --output={version_perf_data_path} --call-graph dwarf -e cache-references,cache-misses,instructions,cycles -F 99 {version_exec_target_path}'
+        #profiler_flags = f' -g --call-graph dwarf '
+
+        profiler_exec_file(profiler_flags, version_perf_data_path)
+
 
 
 

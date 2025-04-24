@@ -30,5 +30,4 @@ bool run_tests(const char path[], hash_table_32b_t *hash_table);
 void print_string_t(const string_t string);
 char *find_first_alpha_ptr(char *start, char *end);
 
-
 #endif // DATA_FUNCTIONS_H

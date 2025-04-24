@@ -109,25 +109,9 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
     list_node_t *last_node = NULL;
     while (cur_node) {
         last_node = cur_node;
-        int str_eq_outp = 0;
 
-        #ifdef ASM_INSERTION
-        __asm__(".intel_syntax noprefix\n"
-            "vmovdqa ymm0, [%V1]\n"
-            "vmovdqa ymm1, [%V2]\n"
-            "vpcmpeqb ymm2, ymm0, ymm1\n"
-            "vpmovmskb eax, ymm2\n"
-            "not eax\n"
-            : "=a"(str_eq_outp)
-            : "r"(key_32b), "r"(cur_node->key)
-            : "ymm0", "ymm1", "ymm2");
-        #else
-        str_eq_outp = str_eq_func(key_32b, cur_node->key);
-        #endif // ASM_INSERTION
-
-        if (str_eq_outp == 0) return true;
+        if (str_eq_func(key_32b, cur_node->key) == 0) return cur_node;
         cur_node = cur_node->next;
-
     }
 
     list_node_t *new_node = list_node_t_ctor(key_32b);
@@ -153,23 +137,7 @@ list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key_32b
 
     list_node_t *cur_node = hash_table->data[table_idx];
     while (cur_node) {
-        int str_eq_outp = 0;
-
-        #ifdef ASM_INSERTION
-        __asm__(".intel_syntax noprefix\n"
-            "vmovdqa ymm0, [%V1]\n"
-            "vmovdqa ymm1, [%V2]\n"
-            "vpcmpeqb ymm2, ymm0, ymm1\n"
-            "vpmovmskb eax, ymm2\n"
-            "not eax\n"
-            : "=a"(str_eq_outp)
-            : "r"(key_32b), "r"(cur_node->key)
-            : "ymm0", "ymm1", "ymm2");
-        #else
-        str_eq_outp = str_eq_func(key_32b, cur_node->key);
-        #endif // ASM_INSERTION
-
-        if (str_eq_outp == 0) return cur_node;
+        if (str_eq_func(key_32b, cur_node->key) == 0) return cur_node;
         cur_node = cur_node->next;
     }
 

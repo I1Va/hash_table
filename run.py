@@ -15,7 +15,7 @@ VERSIONS_DESCRIPTIONS = [
         ["VERSION_1", "-O3 -march=native -mtune=native", " --hash=cr32 "],
         ["VERSION_2", "-O3 -march=native -mtune=native", " --hash=cr32_intrinsic "],
         ["VERSION_3", "-O3 -march=native -mtune=native -D MY_STREQ", " --hash=cr32_intrinsic "],
-        ["VERSION_4", "-O3 -march=native -mtune=native -D MY_STREQ -D ASM_INSERTION", " --hash=cr32_intrinsic "]
+        ["VERSION_4", "-O3 -march=native -mtune=native -masm=intel -D MY_STREQ -D ASM_INSERTION", " --hash=cr32_intrinsic "]
     ]
 
 
@@ -215,9 +215,9 @@ def launch_all_versions_profiling():
         version_perf_data_path = f'{versions_perf_dir_path}/perf_{version_name}.data'
         version_exec_target_path = f'{versions_dir_path}/{version_name}.out'
 
-        profiler_flags = f'-g -T --running-time --output={version_perf_data_path} --call-graph dwarf -e cache-references,cache-misses,instructions,cycles -F 99 {version_exec_target_path}'
-        #profiler_flags = f' -g --call-graph dwarf '
-
+        #profiler_flags = f'-g -T --running-time --output={version_perf_data_path} --call-graph dwarf -e cache-references,cache-misses,instructions,cycles -F 99 {version_exec_target_path}'
+        #profiler_flags = f' -g --call-graph dwarf'
+        profiler_flags = f'-g -T --running-time --output={version_perf_data_path} --call-graph dwarf -F 99 {version_exec_target_path}'
         profiler_exec_file(profiler_flags, version_perf_data_path)
 
 
@@ -228,6 +228,7 @@ def launch_all_versions_profiling():
 # python3 run.py hashes_benchmarks
 # python3 run.py load_factor_benchmark
 # python3 run.py build_all_versions
+# python3 run.py versions_profiling
 
 if __name__ == "__main__":
     if (len(sys.argv) <= 1):
@@ -241,7 +242,7 @@ if __name__ == "__main__":
         prepare_testing_data(text_path, text_words_cnt, tests_cnt)
     elif (sys.argv[1] == "versions_benchmarks"):
         print("launch 'versions_benchmarks'")
-        measures_cnt = 20
+        measures_cnt = 40
         if (len(sys.argv) >= 3):
             measures_cnt = int(sys.argv[2])
 

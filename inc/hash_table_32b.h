@@ -28,6 +28,7 @@ double hash_table_32b_get_load_factor(hash_table_32b_t *hash_table);
 void hash_table_32b_dump_bucket_sizes(FILE *stream, hash_table_32b_t *hash_table);
 bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key);
 list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key);
+inline int streq_32b_inline(const char *str1, const char *str2);
 
 
 #endif // HASH_TABLE_32B_H

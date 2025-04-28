@@ -12,8 +12,8 @@
 #include "data_functions.h"
 
 
-[[gnu::aligned]] [[maybe_unused]]
-static inline int streq_32b_inline(const char *str1, const char *str2) {
+__attribute__((unused))
+inline int streq_32b_inline(const char *str1, const char *str2) {
     int res = 0;
     __asm__(".intel_syntax noprefix\n"
             "vmovdqa ymm0, [%1]\n"
@@ -28,6 +28,23 @@ static inline int streq_32b_inline(const char *str1, const char *str2) {
 
     return res;
 }
+
+__attribute__((unused))
+inline uint64_t inline_crc32_asm_hash_func(char *key) {
+    uint64_t res = 0;
+
+    __asm__(".intel_syntax noprefix\n"
+            "crc32   rax, QWORD PTR [%1]\n"
+            "crc32   rax, QWORD PTR [%1+1]\n"
+            "crc32   rax, QWORD PTR [%1+2]\n"
+            "crc32   rax, QWORD PTR [%1+3]\n"
+
+            : "=a"(res)
+            : "D"(key));
+
+    return res;
+}
+
 
 bool hash_table_32b_t_ctor(hash_table_32b_t *hash_table, const size_t sz, hash_function_t hash_function) {
     assert(hash_table);
@@ -106,7 +123,11 @@ void hash_table_32b_dump_bucket_sizes(FILE *stream, hash_table_32b_t *hash_table
 bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
     assert(hash_table);
 
-    unsigned long long table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
+    #ifdef ASM_INSERTION_CR32
+        uint64_t table_idx = inline_crc32_asm_hash_func(key_32b) % hash_table->sz;
+    #else
+        uint64_t table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
+    #endif // ASM_INSERTION_STREQ
 
     list_node_t *cur_node = hash_table->data[table_idx];
     list_node_t *last_node = NULL;
@@ -114,13 +135,13 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
         last_node = cur_node;
 
         #ifdef MY_STREQ
-            #ifdef ASM_INSERTION
+            #ifdef ASM_INSERTION_STREQ
                 if (streq_32b_inline(key_32b, cur_node->key) == 0) return true;
             #else
                 if (streq_32b(key_32b, cur_node->key) == 0) return true;
             #endif // ASM_INSERTION
         #else
-        if (strncmp(key_32b, cur_node->key, 32) == 0) return true;
+            if (strncmp(key_32b, cur_node->key, 32) == 0) return true;
         #endif // MY_STREQ
 
         cur_node = cur_node->next;
@@ -145,12 +166,17 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
 list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key_32b) {
     assert(hash_table);
 
-    unsigned long long table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
+    #ifdef ASM_INSERTION_CR32
+        uint64_t table_idx = inline_crc32_asm_hash_func(key_32b) % hash_table->sz;
+    #else
+        uint64_t table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
+    #endif // ASM_INSERTION_CR32
+
 
     list_node_t *cur_node = hash_table->data[table_idx];
     while (cur_node) {
         #ifdef MY_STREQ
-            #ifdef ASM_INSERTION
+            #ifdef ASM_INSERTION_STREQ
                 if (streq_32b_inline(key_32b, cur_node->key) == 0) return cur_node;
             #else
                 if (streq_32b(key_32b, cur_node->key) == 0) return cur_node;

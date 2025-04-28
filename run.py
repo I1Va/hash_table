@@ -10,13 +10,14 @@ import seaborn as sns
 # CONFIG
 HASH_FUNCS_NAMES = ["poly", "cr32", "cr32_intrinsic", "fchar", "fnv"]
 
-GENERAL_COMPILE_FFLAGS = "-fno-strict-aliasing -march=native "
+GENERAL_COMPILE_FLAGS = "-fno-strict-aliasing -march=native "
 VERSIONS_DESCRIPTIONS = [
-        ["VERSION_0", f'-O0 {GENERAL_COMPILE_FFLAGS} ', " --hash=cr32 "],
-        ["VERSION_1", f'-O3 {GENERAL_COMPILE_FFLAGS} -mtune=native', " --hash=cr32 "],
-        ["VERSION_2", f'-O3 {GENERAL_COMPILE_FFLAGS} -mtune=native', " --hash=cr32_intrinsic "],
-        ["VERSION_3", f'-O3 {GENERAL_COMPILE_FFLAGS} -mtune=native -D MY_STREQ', " --hash=cr32_intrinsic "],
-        ["VERSION_4", f'-O3 {GENERAL_COMPILE_FFLAGS} -mtune=native -masm=intel -D MY_STREQ -D ASM_INSERTION', " --hash=cr32_intrinsic "]
+        ["VERSION_0", f'-O0 {GENERAL_COMPILE_FLAGS} ', " --hash=cr32 "],
+        ["VERSION_1", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native', " --hash=cr32 "],
+        ["VERSION_2", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native', " --hash=cr32_intrinsic "],
+        ["VERSION_3", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native -D MY_STREQ', " --hash=cr32_intrinsic "],
+        ["VERSION_4", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native -masm=intel -D MY_STREQ -D ASM_INSERTION_STREQ', " --hash=cr32_intrinsic "],
+        ["VERSION_5", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native -masm=intel -D MY_STREQ -D ASM_INSERTION_STREQ -D ASM_INSERTION_CR32', " --hash=cr32_intrinsic "],
     ]
 
 # FUNCTIONS FOR TESTS GENERATION
@@ -243,7 +244,7 @@ if __name__ == "__main__":
         prepare_testing_data(text_path, text_words_cnt, tests_cnt)
     elif (sys.argv[1] == "versions_benchmarks"):
         print("launch 'versions_benchmarks'")
-        measures_cnt = 40
+        measures_cnt = 50
         if (len(sys.argv) >= 3):
             measures_cnt = int(sys.argv[2])
         launch_versions_benchmarks(measures_cnt)

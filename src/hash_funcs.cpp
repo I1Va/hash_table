@@ -1,4 +1,4 @@
-#include <cstdint>
+#include <stdint.h>
 #include <immintrin.h>
 #include <stdint.h>
 
@@ -50,14 +50,13 @@ uint64_t crc32_hash_func(char *key, const size_t len) {
     return ~crc;
 }
 
-#pragma GCC diagnostic ignored "-Wcast-align"
 uint64_t crc32_intrinsic_hash_func(char *key, const size_t len __attribute__((unused))) {
     uint64_t crc = 0;
 
-    crc = _mm_crc32_u64(crc, *(uint64_t*) key + 0);
-    crc = _mm_crc32_u64(crc, *(uint64_t*) key + 1);
-    crc = _mm_crc32_u64(crc, *(uint64_t*) key + 2);
-    crc = _mm_crc32_u64(crc, *(uint64_t*) key + 3);
+    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 0, 32));
+    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 1, 32));
+    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 2, 32));
+    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 3, 32));
 
     return crc;
 }

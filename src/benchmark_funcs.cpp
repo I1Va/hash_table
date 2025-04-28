@@ -35,8 +35,6 @@ hash_function_t choose_hash_function(char hash_function_name[]) {
     return DEFAULT_HASH_FUNCTION;
 }
 
-
-
 time_point_t set_time_point() {
     time_point_t time_point = {};
 

@@ -266,4 +266,3 @@ if __name__ == "__main__":
 
     else:
         print(f'run.py : unknown command "{sys.argv[1]}". Exit.')
-    

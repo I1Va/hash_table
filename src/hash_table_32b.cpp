@@ -22,7 +22,7 @@ inline int streq_32b_inline(const char *str1, const char *str2) {
             "seta al\n"
 
             : "=a"(res)
-            : "S"(str1),
+            : "r"(str1),
               "D"(str2)
             : "ymm0", "cc");
 
@@ -30,7 +30,7 @@ inline int streq_32b_inline(const char *str1, const char *str2) {
 }
 
 __attribute__((unused))
-inline uint64_t inline_crc32_asm_hash_func(char *key) {
+inline uint64_t inline_crc32_asm_hash_func(char *key) { // FIXME: убрать
     uint64_t res = 0;
 
     __asm__(".intel_syntax noprefix\n"

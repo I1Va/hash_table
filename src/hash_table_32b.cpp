@@ -45,6 +45,17 @@ inline uint64_t inline_crc32_asm_hash_func(char *key) {
     return res;
 }
 
+__attribute__((unused))
+inline uint64_t inline_crc32_intrinsic_hash_func(char *key) {
+    uint64_t crc = 0;
+
+    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 0, 32));
+    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 1, 32));
+    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 2, 32));
+    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 3, 32));
+
+    return crc;
+}
 
 bool hash_table_32b_t_ctor(hash_table_32b_t *hash_table, const size_t sz, hash_function_t hash_function) {
     assert(hash_table);
@@ -123,11 +134,21 @@ void hash_table_32b_dump_bucket_sizes(FILE *stream, hash_table_32b_t *hash_table
 bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
     assert(hash_table);
 
+    #ifdef INLINE_INTINSIC_CR32
+        uint64_t table_idx = inline_crc32_intrinsic_hash_func(key_32b) % hash_table->sz;
+        #define HASH_OPTIMIZATION_SELECTED
+    #endif // INLINE_INTINSIC_CR32
+
     #ifdef ASM_INSERTION_CR32
         uint64_t table_idx = inline_crc32_asm_hash_func(key_32b) % hash_table->sz;
-    #else
+        #define HASH_OPTIMIZATION_SELECTED
+    #endif // ASM_INSERTION_CR32
+
+    #ifndef HASH_OPTIMIZATION_SELECTED
         uint64_t table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
-    #endif // ASM_INSERTION_STREQ
+    #else
+        #undef HASH_OPTIMIZATION_SELECTED
+    #endif // NOT HASH_OPTIMIZATION_SELECTED
 
     list_node_t *cur_node = hash_table->data[table_idx];
     list_node_t *last_node = NULL;
@@ -135,14 +156,20 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
         last_node = cur_node;
 
         #ifdef MY_STREQ
-            #ifdef ASM_INSERTION_STREQ
-                if (streq_32b_inline(key_32b, cur_node->key) == 0) return true;
-            #else
-                if (streq_32b(key_32b, cur_node->key) == 0) return true;
-            #endif // ASM_INSERTION
-        #else
-            if (strncmp(key_32b, cur_node->key, 32) == 0) return true;
+            #define STREQ_SELECTED
+            if (streq_32b(key_32b, cur_node->key) == 0) return true;
         #endif // MY_STREQ
+
+        #ifdef ASM_INSERTION_STREQ
+            #define STREQ_SELECTED
+            if (streq_32b_inline(key_32b, cur_node->key) == 0) return true;
+        #endif // ASM_INSERTION
+
+        #ifndef STREQ_SELECTED
+            if (strncmp(key_32b, cur_node->key, 32) == 0) return true;
+        #else
+            #undef STREQ_SELECTED
+        #endif // NOT STREQ_SELECTED
 
         cur_node = cur_node->next;
     }
@@ -176,14 +203,20 @@ list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key_32b
     list_node_t *cur_node = hash_table->data[table_idx];
     while (cur_node) {
         #ifdef MY_STREQ
-            #ifdef ASM_INSERTION_STREQ
-                if (streq_32b_inline(key_32b, cur_node->key) == 0) return cur_node;
-            #else
-                if (streq_32b(key_32b, cur_node->key) == 0) return cur_node;
-            #endif // ASM_INSERTION
-        #else
-            if (strncmp(key_32b, cur_node->key, 32) == 0) return cur_node;
+            #define STREQ_SELECTED
+            if (streq_32b(key_32b, cur_node->key) == 0) return cur_node;
         #endif // MY_STREQ
+
+        #ifdef ASM_INSERTION_STREQ
+            #define STREQ_SELECTED
+            if (streq_32b_inline(key_32b, cur_node->key) == 0) return cur_node;
+        #endif // ASM_INSERTION
+
+        #ifndef STREQ_SELECTED
+            if (strncmp(key_32b, cur_node->key, 32) == 0) return cur_node;
+        #else
+            #undef STREQ_SELECTED
+        #endif // NOT STREQ_SELECTED
 
         cur_node = cur_node->next;
     }

@@ -10,15 +10,14 @@ import seaborn as sns
 # CONFIG
 HASH_FUNCS_NAMES = ["poly", "cr32", "cr32_intrinsic", "fchar", "fnv"]
 
+GENERAL_COMPILE_FFLAGS = "-fno-strict-aliasing -march=native "
 VERSIONS_DESCRIPTIONS = [
-        ["VERSION_0", "-O0 -march=native", " --hash=cr32 "],
-        ["VERSION_1", "-O3 -march=native -mtune=native", " --hash=cr32 "],
-        ["VERSION_2", "-O3 -march=native -mtune=native", " --hash=cr32_intrinsic "],
-        ["VERSION_3", "-O3 -march=native -mtune=native -D MY_STREQ", " --hash=cr32_intrinsic "],
-        ["VERSION_4", "-O3 -march=native -mtune=native -masm=intel -D MY_STREQ -D ASM_INSERTION", " --hash=cr32_intrinsic "]
+        ["VERSION_0", f'-O0 {GENERAL_COMPILE_FFLAGS} ', " --hash=cr32 "],
+        ["VERSION_1", f'-O3 {GENERAL_COMPILE_FFLAGS} -mtune=native', " --hash=cr32 "],
+        ["VERSION_2", f'-O3 {GENERAL_COMPILE_FFLAGS} -mtune=native', " --hash=cr32_intrinsic "],
+        ["VERSION_3", f'-O3 {GENERAL_COMPILE_FFLAGS} -mtune=native -D MY_STREQ', " --hash=cr32_intrinsic "],
+        ["VERSION_4", f'-O3 {GENERAL_COMPILE_FFLAGS} -mtune=native -masm=intel -D MY_STREQ -D ASM_INSERTION', " --hash=cr32_intrinsic "]
     ]
-
-
 
 # FUNCTIONS FOR TESTS GENERATION
 def get_words_list(text_path):
@@ -188,6 +187,8 @@ def build_all_versions():
     for version in VERSIONS_DESCRIPTIONS:
         version_name = version[0]
         compile_flags = version[1]
+        print(f'build {version_name}')
+        print(f'\tcompile_flags : {compile_flags}')
 
         os.system("make clean")
         os.system(f'make CFLAGS="{compile_flags}" OUTFILE_NAME="{version_name}.out"')

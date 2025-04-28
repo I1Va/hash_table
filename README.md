@@ -264,17 +264,13 @@ __Perf hist__
 
 __Реализация__
 ```nasm
-section .text
-global streq_32b
 streq_32b:
+    vmovdqa ymm0, [rdi]
     xor rax, rax
-
-    vmovdqa ymm0, YWORD [rdi]
-    vptest ymm0, YWORD [rsi]
-
+    vptest ymm0, [rsi]
     seta al
-    ret
 
+    ret
 ```
 
 __Результаты__
@@ -289,3 +285,35 @@ __Perf hist__
 ![image](/results/screenshots/v3_perfhist.png)
 
 Было получено ускорение функции сравнения строк более чем на `8%`. Но несмотря на это, она по-прежнему остается самой горячей. Попробуем исправить это в следующей версии.
+
+### VERSION_4
+Реализую inline версию функции streq_32b с помощью ассемблерных вставок
+
+__Реализация__
+```c++
+[[gnu::aligned]] [[maybe_unused]]
+static inline int streq_32b_inline(const char *str1, const char *str2) {
+    int res = 0;
+    __asm__(".intel_syntax noprefix\n"
+            "vmovdqa ymm0, [%1]\n"
+            "vmovdqa ymm1, [%2]\n"
+            "xor rax, rax\n"
+            "vptest ymm0, ymm1\n"
+            "seta al\n"
+
+            : "=a"(res)
+            : "r"(str1),
+              "r"(str2)
+            : "ymm0", "cc");
+
+    return res;
+}
+```
+
+Стоит отметить, что в inline реализации я не могу быть столь лаконичным, сколько в ассемблерной реализации.
+Компилятор подставляет входной адресс строки str2 в регистр rax, из-за чего я не могу его обнулить перед операцией vmovdqa. Поэтому приходится использовать лишнюю инструкцию
+```
+vmovdqa ymm1, [%2]
+```
+
+![image](/results/screenshots/radar2.png)

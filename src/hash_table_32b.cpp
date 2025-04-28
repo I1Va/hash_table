@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdlib.h>
 #include <string.h>
+#include <immintrin.h>
 
 #include "general.h"
 #include "hash_table_32b.h"
@@ -11,20 +12,20 @@
 #include "data_functions.h"
 
 
-#pragma GCC diagnostic ignored "-Wunused-function"
-static inline int streq_32b_inline(char *str1, char *str2) {
+[[gnu::aligned]] [[maybe_unused]]
+static inline int streq_32b_inline(const char *str1, const char *str2) {
     int res = 0;
-
     __asm__(".intel_syntax noprefix\n"
-            "vmovdqa ymm0, [%V1]\n"
-            "vmovdqa ymm1, [%V2]\n"
-            "vpcmpeqb ymm2, ymm0, ymm1\n"
-            "vpmovmskb eax, ymm2\n"
-            "not eax\n"
+            "vmovdqa ymm0, [%1]\n"
+            "vmovdqa ymm1, [%2]\n"
+            "xor rax, rax\n"
+            "vptest ymm0, ymm1\n"
+            "seta al\n"
 
             : "=a"(res)
-            : "r"(str1), "r"(str2)
-            : "ymm0", "ymm1", "ymm2", "cc");
+            : "r"(str1),
+              "r"(str2)
+            : "ymm0", "cc");
 
     return res;
 }

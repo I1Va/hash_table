@@ -35,7 +35,7 @@ CDEBFLAGS = -D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-
 -Wstack-protector -fcheck-new -fsized-deallocation -fstack-protector -fstrict-overflow -flto-odr-type-merging\
 -fno-omit-frame-pointer -Wlarger-than=8192 -Wstack-usage=8192 -pie -fPIE -Werror=vla
 
-CDEBFLAGS += -O3 -march=native -mtune=native -masm=intel -D MY_STREQ -D ASM_INSERTION
+CDEBFLAGS += -fno-strict-aliasing -O3 -march=native -mtune=native -masm=intel -D MY_STREQ # -D ASM_INSERTION
 
 
 SANITIZER_FLAGS = -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,$\

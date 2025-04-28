@@ -11,20 +11,23 @@
 #include "data_functions.h"
 
 
-inline int asm_streq_32b(char *key_32b_1, char *key_32b_2) {
-    return streq_32b(key_32b_1, key_32b_2);
+#pragma GCC diagnostic ignored "-Wunused-function"
+static inline int streq_32b_inline(char *str1, char *str2) {
+    int res = 0;
+
+    __asm__(".intel_syntax noprefix\n"
+            "vmovdqa ymm0, [%V1]\n"
+            "vmovdqa ymm1, [%V2]\n"
+            "vpcmpeqb ymm2, ymm0, ymm1\n"
+            "vpmovmskb eax, ymm2\n"
+            "not eax\n"
+
+            : "=a"(res)
+            : "r"(str1), "r"(str2)
+            : "ymm0", "ymm1", "ymm2", "cc");
+
+    return res;
 }
-
-inline int c_streq_32b(char *key_32b_1, char *key_32b_2) {
-    return strncmp(key_32b_1, key_32b_2, 32);
-}
-
-#ifdef MY_STREQ
-const streq_func_t str_eq_func = asm_streq_32b;
-#else
-const streq_func_t str_eq_func = c_streq_32b;
-#endif // MY_STREQ
-
 
 bool hash_table_32b_t_ctor(hash_table_32b_t *hash_table, const size_t sz, hash_function_t hash_function) {
     assert(hash_table);
@@ -110,7 +113,16 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
     while (cur_node) {
         last_node = cur_node;
 
-        if (str_eq_func(key_32b, cur_node->key) == 0) return cur_node;
+        #ifdef MY_STREQ
+            #ifdef ASM_INSERTION
+                if (streq_32b_inline(key_32b, cur_node->key) == 0) return true;
+            #else
+                if (streq_32b(key_32b, cur_node->key) == 0) return true;
+            #endif // ASM_INSERTION
+        #else
+        if (strncmp(key_32b, cur_node->key, 32) == 0) return true;
+        #endif // MY_STREQ
+
         cur_node = cur_node->next;
     }
 
@@ -137,7 +149,16 @@ list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key_32b
 
     list_node_t *cur_node = hash_table->data[table_idx];
     while (cur_node) {
-        if (str_eq_func(key_32b, cur_node->key) == 0) return cur_node;
+        #ifdef MY_STREQ
+            #ifdef ASM_INSERTION
+                if (streq_32b_inline(key_32b, cur_node->key) == 0) return cur_node;
+            #else
+                if (streq_32b(key_32b, cur_node->key) == 0) return cur_node;
+            #endif // ASM_INSERTION
+        #else
+            if (strncmp(key_32b, cur_node->key, 32) == 0) return cur_node;
+        #endif // MY_STREQ
+
         cur_node = cur_node->next;
     }
 

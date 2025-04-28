@@ -245,7 +245,6 @@ if __name__ == "__main__":
         measures_cnt = 40
         if (len(sys.argv) >= 3):
             measures_cnt = int(sys.argv[2])
-
         launch_versions_benchmarks(measures_cnt)
     elif (sys.argv[1] == "hashes_benchmarks"):
         print("launch 'hashes_benchmarks'")

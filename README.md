@@ -285,7 +285,6 @@ VERSION_1 | 61200123.2 ± 749884.90514                   |         82.1% ± 0.5%
 VERSION_2 | 18481990.2 ± 458314.9905                    |         69.8% ± 1.1%                   |
 VERSION_3 | 15052046.46667 ± 278157.57937               |         18.6% ± 3.5%                   |
 
-
 __Perf hist__
 ![image](/results/screenshots/v3_perfhist.png)
 

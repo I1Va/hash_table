@@ -317,3 +317,6 @@ vmovdqa ymm1, [%2]
 ```
 
 ![image](/results/screenshots/radar2.png)
+
+
+# Вывод:

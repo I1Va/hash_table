@@ -144,8 +144,6 @@ bool run_tests(const char path[], hash_table_32b_t *hash_table) {
         CLEAR_MEMORY(exit_mark)
     }
 
-
-
     for (size_t i = 0; i < tests_cnt; i++) {
         memset(key_32b, 0, 32);
         int fscanf_res = fscanf(tests_file, "%s", key_32b);

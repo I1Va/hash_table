@@ -17,14 +17,13 @@ static inline int streq_32b_inline(const char *str1, const char *str2) {
     int res = 0;
     __asm__(".intel_syntax noprefix\n"
             "vmovdqa ymm0, [%1]\n"
-            "vmovdqa ymm1, [%2]\n"
             "xor rax, rax\n"
-            "vptest ymm0, ymm1\n"
+            "vptest ymm0, [%2]\n"
             "seta al\n"
 
             : "=a"(res)
-            : "r"(str1),
-              "r"(str2)
+            : "S"(str1),
+              "D"(str2)
             : "ymm0", "cc");
 
     return res;

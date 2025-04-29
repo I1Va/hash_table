@@ -97,7 +97,7 @@ def get_version_testing_time(compile_flags, launch_flags):
 
     return get_measure_result(measures_arr)
 
-def launch_versions_benchmarks(measures_cnt):
+def launch_versions_benchmarks():
     outfile_path = f'./{CFG['results']['dir']}/{CFG['results']['vers_benchmarks_res']}'
 
     os.system(f'mkdir -p {CFG['results']['dir']}')
@@ -163,8 +163,8 @@ def build_hash_plot(data_path, img_path, hash_func_name):
 
 def launch_hashes_benchmarks():
     results_dir = CFG['results']['dir']
-    hash_funcs_res_dir = f'./{results_dir}/{hash_data_dir_path}/{CFG['results']['hash_funcs_res_dir']['name']}'
 
+    hash_funcs_res_dir = f'./{results_dir}/{CFG['results']['hash_funcs_res_dir']['name']}'
     hash_data_dir_path = f'./{hash_funcs_res_dir}/{CFG['results']['hash_funcs_res_dir']['data_dir']}'
     hash_img_dir_path = f'./{hash_funcs_res_dir}/{CFG['results']['hash_funcs_res_dir']['img_dir']}'
 
@@ -193,8 +193,7 @@ def launch_load_factor_benchmark():
 # FUNCS FOR ALL VERSIONS BUILDING
 def build_all_versions():
     makefile_build_dir_path = f'./{CFG['makefike']['build_dir']}'
-    versions_build_dir_path = "./results/versions"
-
+    versions_build_dir_path = f'./{CFG['results']['dir']}/{CFG['results']['versions_executables_dir']}'
     os.system(f'mkdir -p {versions_build_dir_path}')
 
     selected_versions_names = CFG['launch_modes']['versions_build']['selected_versions']
@@ -205,8 +204,8 @@ def build_all_versions():
             selected_versions.append(version)
 
     for version in selected_versions:
-        version_name = version[0]
-        compile_flags = version[1]
+        version_name = version['name']
+        compile_flags = version['compile_flags']
         print(f'build {version_name}')
         print(f'\tcompile_flags : {compile_flags}')
 
@@ -216,32 +215,38 @@ def build_all_versions():
 
 
 # FUNCS FOR PROFILING
-
-def profiler_exec_file(profiler_flags, outfile_path):
-    os.system(f'sudo perf record {profiler_flags}')
-    os.system(f'sudo chmod +r {outfile_path}')
-
-def print_fast_version_launch_command(version_name):
+def cfg_get_version_by_name(version_name):
     selected_version = None
     for version in CFG['versions']:
         if version['name'] == version_name:
             selected_version = version
 
 
-    if (selected_version == -1):
+    if (selected_version == None):
         print(f'incorrect version name "{version_name}"')
-        return
+        return None
+
+    return selected_version
+
+
+def print_fast_version_launch_command(version_name):
+    selected_version = cfg_get_version_by_name(version_name)
 
     compile_flags = selected_version['compile_flags']
     launch_flags = selected_version['launch_flags']
     print(f'make clean && make CFLAGS="{compile_flags}" && make launch LAUNCH_FLAGS="{launch_flags}"')
 
-# python3 run.py gen_tests
-# python3 run.py versions_benchmarks
-# python3 run.py hashes_benchmarks
-# python3 run.py load_factor_benchmark
-# python3 run.py build_all_versions
-# python3 run.py versions_profiling
+def makefile_version_build(version):
+    compile_flags = version['compile_flags']
+    version_name = version['name']
+
+    makefile_build_dir_path = f'./{CFG['makefike']['build_dir']}'
+
+    outfile_name = f'{version_name}.out'
+
+    os.system(f'make CFLAGS="{compile_flags}" OUTFILE_NAME="{outfile_name}"')
+
+    return f'{makefile_build_dir_path}/{outfile_name}'
 
 if __name__ == "__main__":
     with open(CONFIG_PATH) as config_file:
@@ -257,19 +262,16 @@ if __name__ == "__main__":
         text_words_cnt = 10 ** 4 * 4
         tests_cnt = 10 ** 4 * 4
         prepare_testing_data(text_path, text_words_cnt, tests_cnt)
-    elif (sys.argv[1] == "versions_benchmarks"):
+    elif (sys.argv[1] == "vbench"):
         print("launch 'versions_benchmarks'")
-        measures_cnt = 1000
-        if (len(sys.argv) >= 3):
-            measures_cnt = int(sys.argv[2])
-        launch_versions_benchmarks(measures_cnt)
-    elif (sys.argv[1] == "hashes_benchmarks"):
+        launch_versions_benchmarks()
+    elif (sys.argv[1] == "hbench"):
         print("launch 'hashes_benchmarks'")
         launch_hashes_benchmarks()
-    elif (sys.argv[1] == "load_factor_benchmark"):
+    elif (sys.argv[1] == "lfbench"):
         print("launch 'load_factor_benchmarks'")
         launch_load_factor_benchmark()
-    elif (sys.argv[1] == "build_all_versions"):
+    elif (sys.argv[1] == "build"):
         print("launch 'build_all_versions'")
         build_all_versions()
     elif (sys.argv[1] == "fcom"):

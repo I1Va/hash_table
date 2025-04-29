@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <ctype.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -9,12 +10,11 @@
 #include <stdint.h>
 #include <errno.h>
 
+#include "benchmark_funcs.h"
 #include "general_structs.h"
 #include "general.h"
 #include "hash_table_32b.h"
 #include "data_functions.h"
-
-static const size_t TESTS_DATA_T_ALIGNMENT = 32;
 
 int get_file_sz(const char path[]) {
     struct stat buf = {};
@@ -119,55 +119,4 @@ bool store_text_in_hash_table(tests_data_t tests_data, hash_table_32b_t *hash_ta
 
     }
     return true;
-}
-
-bool run_tests(const char path[], hash_table_32b_t *hash_table) {
-    assert(path);
-    assert(hash_table);
-
-    FILE    *tests_file = fopen(path, "r");
-    size_t  tests_cnt = 0;
-
-    char *key_32b = (char *) aligned_alloc(TESTS_DATA_T_ALIGNMENT, WORD_32B_NMEMB);
-    if (key_32b == NULL) {
-        debug("aligned_alloc failed");
-        CLEAR_MEMORY(exit_mark)
-    }
-
-    if (tests_file == NULL) {
-        debug("failed to open '%s'", path);
-        CLEAR_MEMORY(exit_mark)
-    }
-
-    if (fscanf(tests_file, "%lu", &tests_cnt) != 1) {
-        debug("tests_cnt fscanf error");
-        CLEAR_MEMORY(exit_mark)
-    }
-
-    for (size_t i = 0; i < tests_cnt; i++) {
-        memset(key_32b, 0, 32);
-        int fscanf_res = fscanf(tests_file, "%s", key_32b);
-        if (fscanf_res != 1) {
-            debug("string.ptr fscanf failed : fscanf_res='%d', errno='%s'", fscanf_res, strerror(errno));
-            CLEAR_MEMORY(exit_mark)
-        }
-
-        list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
-
-        if (read_key_res == NULL) {
-            debug("word '%s' hasn't found\n", key_32b);
-            CLEAR_MEMORY(exit_mark)
-        }
-    }
-
-
-    if (key_32b) free(key_32b);
-    if (tests_file) fclose(tests_file);
-    return true;
-
-    exit_mark:
-    if (tests_file) fclose(tests_file);
-    if (key_32b) free(key_32b);
-
-    return false;
 }

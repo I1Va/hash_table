@@ -10,6 +10,7 @@
 #include "hash_funcs.h"
 #include "hash_table_32b.h"
 #include "benchmark_funcs.h"
+#include "data_functions.h"
 
 
 hash_function_t choose_hash_function(char hash_function_name[]) {
@@ -61,29 +62,6 @@ void measure_hashing_time(hash_function_t hash_function, tests_data_t tests_data
     duration->tick_point = end_point.tick_point - start_point.tick_point;
 }
 
-bool measure_testing_time(hash_table_32b_t *hash_table, tests_data_t tests_data, time_point_t *duration) {
-    assert(hash_table);
-    assert(duration);
-
-    time_point_t start_point = {};
-    time_point_t end_point = {};
-
-
-    store_text_in_hash_table(tests_data, hash_table);
-
-    start_point = set_time_point();
-    if (!run_tests(TESTS_PATH, hash_table)) {
-        debug("run_tests failed");
-        return false;
-    }
-    end_point = set_time_point();
-
-    duration->clock_point = end_point.clock_point - start_point.clock_point;
-    duration->tick_point = end_point.tick_point - start_point.tick_point;
-
-    return true;
-}
-
 bool delete_file(const char path[]) {
     assert(path);
 
@@ -97,6 +75,66 @@ bool delete_file(const char path[]) {
     }
 
     return true;
+}
+
+
+bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_point_t *duration) {
+    assert(path);
+    assert(hash_table);
+    assert(duration);
+
+    FILE    *tests_file = fopen(path, "r");
+    size_t  tests_cnt = 0;
+    time_point_t start = {};
+    time_point_t end = {};
+
+    char *key_32b = (char *) aligned_alloc(TESTS_DATA_T_ALIGNMENT, WORD_32B_NMEMB);
+    if (key_32b == NULL) {
+        debug("aligned_alloc failed");
+        CLEAR_MEMORY(exit_mark)
+    }
+
+    if (tests_file == NULL) {
+        debug("failed to open '%s'", path);
+        CLEAR_MEMORY(exit_mark)
+    }
+
+    if (fscanf(tests_file, "%lu", &tests_cnt) != 1) {
+        debug("tests_cnt fscanf error");
+        CLEAR_MEMORY(exit_mark)
+    }
+
+    for (size_t i = 0; i < tests_cnt; i++) {
+        memset(key_32b, 0, 32);
+        int fscanf_res = fscanf(tests_file, "%s", key_32b);
+        if (fscanf_res != 1) {
+            debug("string.ptr fscanf failed : fscanf_res='%d', errno='%s'", fscanf_res, strerror(errno));
+            CLEAR_MEMORY(exit_mark)
+        }
+
+        start = set_time_point();
+        list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
+        end = set_time_point();
+
+        duration->tick_point += (end.tick_point - start.tick_point);
+        duration->clock_point += (end.clock_point - start.clock_point) / CLOCKS_PER_SEC;
+
+        if (read_key_res == NULL) {
+            debug("word '%s' hasn't found\n", key_32b);
+            CLEAR_MEMORY(exit_mark)
+        }
+    }
+
+
+    if (key_32b) free(key_32b);
+    if (tests_file) fclose(tests_file);
+    return true;
+
+    exit_mark:
+    if (tests_file) fclose(tests_file);
+    if (key_32b) free(key_32b);
+
+    return false;
 }
 
 bool run_hashes_benchmarks(config_t *config) {
@@ -175,8 +213,10 @@ bool run_versions_benchmarks(config_t *config) {
         }
 
         time_point_t duration = {};
-        if (!measure_testing_time(&hash_table, tests_data, &duration)) {
-            debug("test iteration <%d> failed", i);
+        store_text_in_hash_table(tests_data, &hash_table);
+
+        if (!measure_version_time(TESTS_PATH, &hash_table, &duration)) {
+            debug("run_tests failed");
             CLEAR_MEMORY(exit_mark_free_hash_table)
         }
 

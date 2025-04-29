@@ -6,21 +6,11 @@ import tempfile
 import time
 import matplotlib.pyplot as plt
 import seaborn as sns
+import yaml
 
 # CONFIG
-HASH_FUNCS_NAMES = ["poly", "cr32", "cr32_intrinsic", "fchar", "fnv"]
-
-GENERAL_COMPILE_FLAGS = "-fno-strict-aliasing -march=native "
-VERSIONS_DESCRIPTIONS = [
-        ["VERSION_O0", f'-O0 {GENERAL_COMPILE_FLAGS} ', " --hash=cr32 "],
-        ["VERSION_03", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native', " --hash=cr32 "],
-        ["VERSION_INTINSIC", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native', " --hash=cr32_intrinsic "],
-        ["VERSION_MY_STREQ", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native -D MY_STREQ', " --hash=cr32_intrinsic "],
-
-        ["VERSION_ASM_INSERTION_STREQ", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native -masm=intel -D ASM_INSERTION_STREQ', " --hash=cr32_intrinsic "],
-        ["VERSION_ASM_INSERTION_CR32", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native -masm=intel -D ASM_INSERTION_STREQ -D ASM_INSERTION_CR32', " --hash=cr32_intrinsic "],
-        ["VERSION_INLINE_INTINSIC_CR32", f'-O3 {GENERAL_COMPILE_FLAGS} -mtune=native -masm=intel -D MY_STREQ -D INLINE_INTINSIC_CR32', " --hash=cr32_intrinsic "],
-    ]
+CONFIG_PATH = 'configs/benchmarks.yaml'
+CFG = ''
 
 # FUNCTIONS FOR TESTS GENERATION
 def get_words_list(text_path):
@@ -45,13 +35,14 @@ def write_tests(output_path, words_list, tests_cnt):
             random_word = words_list[random.randrange(len(words_list))]
             file.write(f'{random_word}\n')
 
-def prepare_testing_data(text_path, text_words_cnt, tests_cnt):
-    os.system("mkdir -p data")
+def prepare_testing_data(text_path, text_words_cnt, tests_cnt, text_outpath, tests_outpath):
+    os.system(f'mkdir -p {CFG['data_folder']['name']}')
 
     words_list = get_words_list(text_path)[:text_words_cnt]
 
-    write_text("./data/text.txt", words_list)
-    write_tests("./data/tests.txt", words_list, tests_cnt)
+    write_text(text_outpath, words_list)
+    write_tests(tests_outpath, words_list, tests_cnt)
+
 
 # GENERAL_BENCHMARKING_FUNCS
 def execute_hash_tables_benchmarks(compile_flags, launch_flags):
@@ -69,6 +60,16 @@ def get_standard_deviation(measures_arr):
 
     return standard_deviation
 
+def error_remove_lower_digits(error):
+    error_str = str(error)
+
+    num_order = len(error_str)
+    dot_idx = error_str.find('.', 1)
+    if dot_idx != -1:
+        num_order = dot_idx
+
+    return int(error_str[0]) * 10 ** num_order
+
 def get_measure_result(measures_arr):
     n = len(measures_arr)
 
@@ -76,7 +77,7 @@ def get_measure_result(measures_arr):
     standard_deviation = get_standard_deviation(measures_arr)
     standard_error = standard_deviation / math.sqrt(n)
 
-    return f'{round(average_value, 5)} ± {round(standard_error, 5)} (error : {round(standard_error / average_value * 100, 2)}%)'
+    return f'{round(average_value, 5)} ± {error_remove_lower_digits(standard_error)} (error : {round(standard_error / average_value * 100, 2)}%)'
 
 
 # FUNCS FOR VERSIONS BENCHMARKING
@@ -97,27 +98,32 @@ def get_version_testing_time(compile_flags, launch_flags):
     return get_measure_result(measures_arr)
 
 def launch_versions_benchmarks(measures_cnt):
-    outfile_dir = "results"
-    outfile_path = f'./{outfile_dir}/versions_benchmark.out'
+    outfile_path = f'./{CFG['results']['dir']}/{CFG['results']['vers_benchmarks_res']}'
 
-    os.system(f'mkdir -p {outfile_dir}')
+    os.system(f'mkdir -p {CFG['results']['dir']}')
 
-    default_launch_flags = f' --runs={measures_cnt} --benchmark=ver --print=0 '
+    default_launch_flags = f' --benchmark=ver --print=0 '
+
+    selected_versions = CFG['launch_modes']['versions_benchmarks']['selected_versions']
+    prepared_versions = []
+
+    for version in CFG['versions']:
+        if version['name'] in selected_versions.keys():
+            prepared_versions.append({"version" : version, "runs_cnt" : selected_versions[version['name']]})
 
     with open(outfile_path, "w") as file:
-        for version in VERSIONS_DESCRIPTIONS[3:]:
-            version_name = version[0]
-            print(f'LAUNCH {version_name}')
+        for version in prepared_versions:
+            version_name = version['version']
+            runs_cnt = version['runs_cnt']
 
-            compile_flags = version[1]
-            launch_flags = version[2] + default_launch_flags
-            file.write(f'{version_name} : {get_version_testing_time(compile_flags, launch_flags)}\n')
-
+            compile_flags = version['version']['compile_flags']
+            launch_flags = version['version']['launch_flags'] + default_launch_flags + f' --runs={runs_cnt}'
+            file.write(f'{version_name['name']} : {get_version_testing_time(compile_flags, launch_flags)}\n')
 
 
 # FUNCS FOR HASH FUNCTIONS BENCHMARKING
 def make_hash_res_file(outfile_path, hash_func_name):
-    compile_flags = "-O3 -march=native -mtune=native"
+    compile_flags = CFG['launch_modes']['hashes_benchmarks']['compile_flags']
     launch_flags = f' --output={outfile_path} --hash={hash_func_name} --benchmark=hash --print=0'
 
     execute_hash_tables_benchmarks(compile_flags, launch_flags)
@@ -156,13 +162,17 @@ def build_hash_plot(data_path, img_path, hash_func_name):
     plt.savefig(f'{img_path}')
 
 def launch_hashes_benchmarks():
-    hash_data_dir_path = "./results/hash_funcs/data"
-    hash_img_dir_path = "./results/hash_funcs/img"
+    results_dir = CFG['results']['dir']
+    hash_funcs_res_dir = f'./{results_dir}/{hash_data_dir_path}/{CFG['results']['hash_funcs_res_dir']['name']}'
 
+    hash_data_dir_path = f'./{hash_funcs_res_dir}/{CFG['results']['hash_funcs_res_dir']['data_dir']}'
+    hash_img_dir_path = f'./{hash_funcs_res_dir}/{CFG['results']['hash_funcs_res_dir']['img_dir']}'
+
+    os.system(f'mkdir -p {results_dir}')
     os.system(f'mkdir -p {hash_data_dir_path}')
     os.system(f'mkdir -p {hash_img_dir_path}')
 
-    for name in HASH_FUNCS_NAMES:
+    for name in CFG['hash_funcs_names']:
         hash_data_file_path = f'{hash_data_dir_path}/{name}.data'
         hash_img_file_path = f'{hash_img_dir_path}/{name}.png'
 
@@ -171,23 +181,30 @@ def launch_hashes_benchmarks():
 
 # FUNCS FOR LOAD FACTOR BENCHMARKING
 def launch_load_factor_benchmark():
-    load_factor_folder = "./results"
+    results_cfg = CFG['results']
 
-    os.system(f'mkdir -p {load_factor_folder}')
+    os.system(f'mkdir -p {results_cfg['dir']}')
 
     compile_flags = ""
-    launch_flags = f'--benchmark="load" --output="{load_factor_folder}/load_factor"'
+    launch_flags = f'--benchmark="load" --output="{results_cfg['dir']}/{results_cfg['load_factor_file']}"'
     execute_hash_tables_benchmarks(compile_flags, launch_flags)
 
 
 # FUNCS FOR ALL VERSIONS BUILDING
 def build_all_versions():
-    makefile_build_dir_path = "./build"
+    makefile_build_dir_path = f'./{CFG['makefike']['build_dir']}'
     versions_build_dir_path = "./results/versions"
 
     os.system(f'mkdir -p {versions_build_dir_path}')
 
-    for version in VERSIONS_DESCRIPTIONS:
+    selected_versions_names = CFG['launch_modes']['versions_build']['selected_versions']
+    selected_versions = []
+
+    for version in CFG['versions']:
+        if version['name'] in selected_versions_names:
+            selected_versions.append(version)
+
+    for version in selected_versions:
         version_name = version[0]
         compile_flags = version[1]
         print(f'build {version_name}')
@@ -204,28 +221,20 @@ def profiler_exec_file(profiler_flags, outfile_path):
     os.system(f'sudo perf record {profiler_flags}')
     os.system(f'sudo chmod +r {outfile_path}')
 
-def launch_all_versions_profiling():
-    versions_dir_path = "./results/versions"
-    versions_perf_dir_path = f'{versions_dir_path}/perf_data'
-    os.system(f'rm -rf {versions_perf_dir_path}')
-    os.system(f'mkdir {versions_perf_dir_path}')
+def print_fast_version_launch_command(version_name):
+    selected_version = None
+    for version in CFG['versions']:
+        if version['name'] == version_name:
+            selected_version = version
 
 
+    if (selected_version == -1):
+        print(f'incorrect version name "{version_name}"')
+        return
 
-
-    for version in VERSIONS_DESCRIPTIONS:
-
-        version_name = version[0]
-        version_perf_data_path = f'{versions_perf_dir_path}/perf_{version_name}.data'
-        version_exec_target_path = f'{versions_dir_path}/{version_name}.out'
-
-        #profiler_flags = f'-g -T --running-time --output={version_perf_data_path} --call-graph dwarf -e cache-references,cache-misses,instructions,cycles -F 99 {version_exec_target_path}'
-        #profiler_flags = f' -g --call-graph dwarf'
-        profiler_flags = f'-g -T --running-time --output={version_perf_data_path} --call-graph dwarf -F 99 {version_exec_target_path}'
-        profiler_exec_file(profiler_flags, version_perf_data_path)
-
-
-
+    compile_flags = selected_version['compile_flags']
+    launch_flags = selected_version['launch_flags']
+    print(f'make clean && make CFLAGS="{compile_flags}" && make launch LAUNCH_FLAGS="{launch_flags}"')
 
 # python3 run.py gen_tests
 # python3 run.py versions_benchmarks
@@ -235,7 +244,11 @@ def launch_all_versions_profiling():
 # python3 run.py versions_profiling
 
 if __name__ == "__main__":
+    with open(CONFIG_PATH) as config_file:
+        CFG = yaml.safe_load(config_file)
+
     if (len(sys.argv) <= 1):
+        print("Launch mode hasn't been selected. Exit")
         exit(0)
 
     if (sys.argv[1] == "gen_tests"):
@@ -259,10 +272,11 @@ if __name__ == "__main__":
     elif (sys.argv[1] == "build_all_versions"):
         print("launch 'build_all_versions'")
         build_all_versions()
-    elif (sys.argv[1] == "versions_profiling"):
-        print("launch 'versions_profiling'")
-        launch_all_versions_profiling()
-    # elif (sys.argv[1] == "all"):
+    elif (sys.argv[1] == "fcom"):
+        if (len(sys.argv) < 3):
+            print("version hasn't been selected. Exit")
+        else:
+            print_fast_version_launch_command(sys.argv[2])
 
     else:
         print(f'run.py : unknown command "{sys.argv[1]}". Exit.')

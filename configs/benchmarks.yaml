@@ -1,0 +1,65 @@
+hash_funcs_names: ["poly", "cr32", "cr32_intrinsic", "fchar", "fnv"]
+
+versions:
+  - name : v1 # версия без оптимизаций
+    compile_flags : "-O0 -march=native"
+    launch_flags : "--hash=cr32"
+
+  - name : v2 # версия с компиляторными оптимизациями
+    compile_flags : "-O3 -march=native -mtune=native"
+    launch_flags : "--hash=cr32"
+
+  - name : v3 # версия с intrinsic оптимизацией функции cr32
+    compile_flags : "-O3 -march=native -mtune=native"
+    launch_flags : "--hash=cr32_intrinsic"
+
+  - name : v4 # версия с использованием собственной реализацией функции streq на ассемблере
+    compile_flags : "-O3 -march=native -mtune=native -D MY_STREQ"
+    launch_flags : "--hash=cr32_intrinsic"
+
+  - name : v5 # версия с использованием inline функции streq с ассемблерными вставками
+    compile_flags : "-O3 -march=native -mtune=native -masm=intel -D ASM_INSERTION_STREQ"
+    launch_flags : "--hash=cr32_intrinsic"
+
+  - name : v6 # версия с использованием inline хэш-функции cr32 на intrinsic
+    compile_flags : "-O3 -march=native -mtune=native -masm=intel -D ASM_INSERTION_STREQ -D INLINE_INTINSIC_CR32"
+    launch_flags : "--hash=cr32_intrinsic"
+
+
+data_folder:
+    name : data
+
+
+
+
+
+results:
+    dir : results
+    load_factor_file : load_factor
+    vers_benchmarks_res : versions_benchmarks
+    hash_funcs_res_dir:
+      name : hash_funcs
+      data_dir : data
+      img_dir : img
+    hash_data_dir_path : hash_funcs/data
+
+
+
+launch_modes:
+  versions_benchmarks:
+    selected_versions: # "vi" : <benchmark runs cnt>
+      v1 : 10
+      v2 : 10
+      v3 : 10
+      v4 : 10
+      v5 : 10
+      v6 : 10
+
+  versions_build:
+    selected_versions: ["v1", "v2", "v3", "v4", "v5", "v6"]
+  hashes_benchmarks:
+    compile_flags: -O3 -march=native -mtune=native
+
+
+makefike:
+  build_dir: build

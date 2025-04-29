@@ -4,3 +4,4 @@ data/*
 debug/*
 .cache/*
 compile_commands.json
+python_venv/*

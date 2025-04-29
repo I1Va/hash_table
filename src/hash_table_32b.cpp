@@ -1,10 +1,10 @@
 #include <assert.h>
-#include <cstdio>
-#include <cstdlib>
-#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>
+#include <sys/types.h>
 
 #include "general.h"
 #include "hash_table_32b.h"
@@ -30,31 +30,25 @@ inline int streq_32b_inline(const char *str1, const char *str2) {
 }
 
 __attribute__((unused))
-inline uint64_t inline_crc32_asm_hash_func(char *key) { // FIXME: убрать
+inline uint64_t inline_crc32_intrinsic_hash_func(char *key) {
     uint64_t res = 0;
 
-    __asm__(".intel_syntax noprefix\n"
-            "crc32   rax, QWORD PTR [%1]\n"
-            "crc32   rax, QWORD PTR [%1+1]\n"
-            "crc32   rax, QWORD PTR [%1+2]\n"
-            "crc32   rax, QWORD PTR [%1+3]\n"
+    uint64_t key_vec_u64_0 = 0;
+    uint64_t key_vec_u64_1 = 0;
+    uint64_t key_vec_u64_2 = 0;
+    uint64_t key_vec_u64_3 = 0;
 
-            : "=a"(res)
-            : "D"(key));
+    memcpy(&key_vec_u64_0, key + 0, 8);
+    memcpy(&key_vec_u64_1, key + 1, 8);
+    memcpy(&key_vec_u64_2, key + 2, 8);
+    memcpy(&key_vec_u64_3, key + 3, 8);
+
+    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 0, 32));
+    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 1, 32));
+    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 2, 32));
+    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 3, 32));
 
     return res;
-}
-
-__attribute__((unused))
-inline uint64_t inline_crc32_intrinsic_hash_func(char *key) {
-    uint64_t crc = 0;
-
-    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 0, 32));
-    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 1, 32));
-    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 2, 32));
-    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 3, 32));
-
-    return crc;
 }
 
 bool hash_table_32b_t_ctor(hash_table_32b_t *hash_table, const size_t sz, hash_function_t hash_function) {
@@ -138,11 +132,6 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
         uint64_t table_idx = inline_crc32_intrinsic_hash_func(key_32b) % hash_table->sz;
         #define HASH_OPTIMIZATION_SELECTED
     #endif // INLINE_INTINSIC_CR32
-
-    #ifdef ASM_INSERTION_CR32
-        uint64_t table_idx = inline_crc32_asm_hash_func(key_32b) % hash_table->sz;
-        #define HASH_OPTIMIZATION_SELECTED
-    #endif // ASM_INSERTION_CR32
 
     #ifndef HASH_OPTIMIZATION_SELECTED
         uint64_t table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;

@@ -50,13 +50,23 @@ uint64_t crc32_hash_func(char *key, const size_t len) {
     return ~crc;
 }
 
-uint64_t crc32_intrinsic_hash_func(char *key, const size_t len __attribute__((unused))) {
-    uint64_t crc = 0;
+uint64_t crc32_intrinsic_hash_func(char *key, const size_t __attribute__((unused)) len) {
+    uint64_t res = 0;
 
-    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 0, 32));
-    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 1, 32));
-    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 2, 32));
-    crc = _mm_crc32_u64(crc, *(uint64_t*) __builtin_assume_aligned(key + 3, 32));
+    uint64_t key_vec_u64_0 = 0;
+    uint64_t key_vec_u64_1 = 0;
+    uint64_t key_vec_u64_2 = 0;
+    uint64_t key_vec_u64_3 = 0;
 
-    return crc;
+    memcpy(&key_vec_u64_0, key + 0, 8);
+    memcpy(&key_vec_u64_1, key + 1, 8);
+    memcpy(&key_vec_u64_2, key + 2, 8);
+    memcpy(&key_vec_u64_3, key + 3, 8);
+
+    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 0, 32));
+    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 1, 32));
+    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 2, 32));
+    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 3, 32));
+
+    return res;
 }

@@ -68,14 +68,14 @@ bool measure_testing_time(hash_table_32b_t *hash_table, tests_data_t tests_data,
     time_point_t start_point = {};
     time_point_t end_point = {};
 
-    start_point = set_time_point();
+
     store_text_in_hash_table(tests_data, hash_table);
 
+    start_point = set_time_point();
     if (!run_tests(TESTS_PATH, hash_table)) {
         debug("run_tests failed");
         return false;
     }
-
     end_point = set_time_point();
 
     duration->clock_point = end_point.clock_point - start_point.clock_point;

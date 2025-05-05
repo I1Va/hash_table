@@ -21,6 +21,26 @@ inline int streq_32b_inline(const char *str1, const char *str2) {
             "vptest ymm0, [%2]\n"
             "seta al\n"
 
+            "vmovdqa ymm0, [%1]\n"
+            "xor rax, rax\n"
+            "vptest ymm0, [%2]\n"
+            "seta al\n"
+
+            "vmovdqa ymm0, [%1]\n"
+            "xor rax, rax\n"
+            "vptest ymm0, [%2]\n"
+            "seta al\n"
+
+            "vmovdqa ymm0, [%1]\n"
+            "xor rax, rax\n"
+            "vptest ymm0, [%2]\n"
+            "seta al\n"
+
+            "vmovdqa ymm0, [%1]\n"
+            "xor rax, rax\n"
+            "vptest ymm0, [%2]\n"
+            "seta al\n"
+
             : "=a"(res)
             : "r"(str1),
               "D"(str2)
@@ -149,7 +169,7 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
             if (streq_32b(key_32b, cur_node->key) == 0) return true;
         #endif // MY_STREQ
 
-        #ifdef ASM_INSERTION_STREQ
+        #ifdef INLINE_ASM_STREQ
             #define STREQ_SELECTED
             if (streq_32b_inline(key_32b, cur_node->key) == 0) return true;
         #endif // ASM_INSERTION
@@ -196,10 +216,10 @@ list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key_32b
             if (streq_32b(key_32b, cur_node->key) == 0) return cur_node;
         #endif // MY_STREQ
 
-        #ifdef ASM_INSERTION_STREQ
+        #ifdef INLINE_ASM_STREQ
             #define STREQ_SELECTED
             if (streq_32b_inline(key_32b, cur_node->key) == 0) return cur_node;
-        #endif // ASM_INSERTION
+        #endif // INLINE_ASM_STREQ
 
         #ifndef STREQ_SELECTED
             if (strncmp(key_32b, cur_node->key, 32) == 0) return cur_node;

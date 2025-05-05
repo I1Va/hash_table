@@ -12,7 +12,6 @@
 
 struct time_point_t {
     uint64_t    tick_point;
-    clock_t     clock_point;
 };
 
 const size_t HASH_TABLE_SZ = 512;

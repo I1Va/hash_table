@@ -3,6 +3,7 @@
 #include <immintrin.h>
 #include <assert.h>
 #include <errno.h>
+#include <sys/types.h>
 
 #include "args_proc.h"
 #include "general.h"
@@ -40,7 +41,6 @@ time_point_t set_time_point() {
     time_point_t time_point = {};
 
     time_point.tick_point = __rdtsc();
-    time_point.clock_point = clock();
 
     return time_point;
 }
@@ -51,15 +51,13 @@ void measure_hashing_time(hash_function_t hash_function, tests_data_t tests_data
     assert(duration);
     assert(hash_function);
 
-    time_point_t start_point = set_time_point();
+    uint64_t tick_start = __rdtsc();
     for (size_t i = 0; i < tests_data.words_cnt; i++) {
         char *key_32b = tests_data.words_32b + i * WORD_32B_NMEMB;
         dummy_variable = hash_function(key_32b, WORD_32B_NMEMB);
     }
-    time_point_t end_point = set_time_point();
-
-    duration->clock_point = end_point.clock_point - start_point.clock_point;
-    duration->tick_point = end_point.tick_point - start_point.tick_point;
+    uint64_t tick_end = __rdtsc();
+    duration->tick_point = tick_end - tick_start;
 }
 
 bool delete_file(const char path[]) {
@@ -85,8 +83,8 @@ bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_
 
     FILE    *tests_file = fopen(path, "r");
     size_t  tests_cnt = 0;
-    time_point_t start = {};
-    time_point_t end = {};
+    uint64_t tick_start = 0;
+    uint64_t tick_end = 0;
 
     char *key_32b = (char *) aligned_alloc(TESTS_DATA_T_ALIGNMENT, WORD_32B_NMEMB);
     if (key_32b == NULL) {
@@ -112,12 +110,11 @@ bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_
             CLEAR_MEMORY(exit_mark)
         }
 
-        start = set_time_point();
+        tick_start = __rdtsc();
         list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
-        end = set_time_point();
+        tick_end = __rdtsc();
 
-        duration->tick_point += (end.tick_point - start.tick_point);
-        duration->clock_point += (end.clock_point - start.clock_point) / CLOCKS_PER_SEC;
+        duration->tick_point += (tick_end - tick_start);
 
         if (read_key_res == NULL) {
             debug("word '%s' hasn't found\n", key_32b);
@@ -202,8 +199,6 @@ bool run_versions_benchmarks(config_t *config) {
             CLEAR_MEMORY(exit_mark)
         }
     }
-
-
 
     for (int i = 0; i < config->measures_cnt; i++) {
         hash_table = {};

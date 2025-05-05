@@ -35,7 +35,16 @@ def write_tests(output_path, words_list, tests_cnt):
             random_word = words_list[random.randrange(len(words_list))]
             file.write(f'{random_word}\n')
 
-def prepare_testing_data(text_path, text_words_cnt, tests_cnt, text_outpath, tests_outpath):
+def prepare_testing_data():
+    data_dir = CFG['tests_gen']['data_dir']
+    text_path = CFG['tests_gen']['text_path']
+    text_outpath = f'{data_dir}/text.txt'
+    tests_outpath = f'{data_dir}/tests.txt'
+
+    tests_cnt = CFG['tests_gen']['tests_cnt']
+    text_words_cnt = CFG['tests_gen']['text_words_cnt']
+
+
     os.system(f'mkdir -p {CFG['data_folder']['name']}')
 
     words_list = get_words_list(text_path)[:text_words_cnt]
@@ -45,11 +54,11 @@ def prepare_testing_data(text_path, text_words_cnt, tests_cnt, text_outpath, tes
 
 
 # GENERAL_BENCHMARKING_FUNCS
-def execute_hash_tables_benchmarks(compile_flags, launch_flags):
+def execute_hash_tables_benchmarks(compile_flags, launch_flags, version_name):
     print(f'compile_flags : {compile_flags}')
-    os.system("make clean")
-    os.system(f'make CFLAGS="{compile_flags}"')
-    os.system(f'make launch LAUNCH_FLAGS="{launch_flags}"')
+    os.system(f'make clean OUTFILE_NAME="{version_name}"')
+    os.system(f'make CFLAGS="{compile_flags}" OUTFILE_NAME="{version_name}"')
+    os.system(f'make launch LAUNCH_FLAGS="{launch_flags}" OUTFILE_NAME="{version_name}"')
 
 def get_standard_deviation(measures_arr):
     n = len(measures_arr)
@@ -81,13 +90,13 @@ def get_measure_result(measures_arr):
 
 
 # FUNCS FOR VERSIONS BENCHMARKING
-def get_version_testing_time(compile_flags, launch_flags):
+def get_version_testing_time(compile_flags, launch_flags, version_name):
     temp_res_file_name = "./temp_benchmark_res.out"
     launch_flags += f' --output={temp_res_file_name} '
 
     os.system(f'echo -n > {temp_res_file_name}')
 
-    execute_hash_tables_benchmarks(compile_flags, launch_flags)
+    execute_hash_tables_benchmarks(compile_flags, launch_flags, version_name)
 
     measures_arr = []
     with open(temp_res_file_name, "r") as file:
@@ -107,18 +116,20 @@ def launch_versions_benchmarks():
     selected_versions = CFG['launch_modes']['versions_benchmarks']['selected_versions']
     prepared_versions = []
 
+
     for version in CFG['versions']:
         if version['name'] in selected_versions.keys():
             prepared_versions.append({"version" : version, "runs_cnt" : selected_versions[version['name']]})
 
     with open(outfile_path, "w") as file:
         for version in prepared_versions:
-            version_name = version['version']
+            version_name = version['version']['name']
             runs_cnt = version['runs_cnt']
 
             compile_flags = version['version']['compile_flags']
             launch_flags = version['version']['launch_flags'] + default_launch_flags + f' --runs={runs_cnt}'
-            file.write(f'{version_name['name']} : {get_version_testing_time(compile_flags, launch_flags)}\n')
+
+            file.write(f'{version_name} : {get_version_testing_time(compile_flags, launch_flags, version_name)}\n')
 
 
 # FUNCS FOR HASH FUNCTIONS BENCHMARKING
@@ -126,7 +137,7 @@ def make_hash_res_file(outfile_path, hash_func_name):
     compile_flags = CFG['launch_modes']['hashes_benchmarks']['compile_flags']
     launch_flags = f' --output={outfile_path} --hash={hash_func_name} --benchmark=hash --print=0'
 
-    execute_hash_tables_benchmarks(compile_flags, launch_flags)
+    execute_hash_tables_benchmarks(compile_flags, launch_flags, "hash_table.out")
 
     with open(outfile_path, "r") as file:
         measures_arr = list(map(int, file.readline().split()))
@@ -187,7 +198,7 @@ def launch_load_factor_benchmark():
 
     compile_flags = ""
     launch_flags = f'--benchmark="load" --output="{results_cfg['dir']}/{results_cfg['load_factor_file']}"'
-    execute_hash_tables_benchmarks(compile_flags, launch_flags)
+    execute_hash_tables_benchmarks(compile_flags, launch_flags, "load_factor.out")
 
 
 # FUNCS FOR ALL VERSIONS BUILDING
@@ -258,10 +269,7 @@ if __name__ == "__main__":
 
     if (sys.argv[1] == "gen_tests"):
         print("launch 'gen_tests'")
-        text_path = "./war_and_peace.txt"
-        text_words_cnt = 10 ** 4 * 4
-        tests_cnt = 10 ** 4 * 4
-        prepare_testing_data(text_path, text_words_cnt, tests_cnt)
+        prepare_testing_data()
     elif (sys.argv[1] == "vbench"):
         print("launch 'versions_benchmarks'")
         launch_versions_benchmarks()

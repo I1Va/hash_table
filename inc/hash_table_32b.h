@@ -18,7 +18,6 @@ struct hash_table_32b_t {
     list_node_t **data;
 };
 
-
 bool hash_table_32b_t_ctor(hash_table_32b_t *hash_table, const size_t sz, hash_function_t hash_function);
 void list_dtor(list_node_t *first_node);
 void hash_table_t_dtor(hash_table_32b_t *hash_table);

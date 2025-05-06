@@ -2,6 +2,7 @@ build/*
 docs/*
 data/*
 debug/*
+temp/*
 .cache/*
 compile_commands.json
 python_venv/*

@@ -34,23 +34,22 @@ uint64_t fnv1a_hash(char *key, const size_t len) {
 }
 
 uint64_t crc32_hash_func(char *key, const size_t len) {
-    const uint64_t CR32_POLY = 0x11EDC6F41;
+    const uint64_t CR32_POLY = 0x04C11DB7;
     const unsigned char *buffer = (const unsigned char*) key;
     uint64_t crc = (uint64_t) -1;
 
-    for (size_t i = 0; i < len; i++) {
-        crc = crc ^ (uint64_t) (*buffer++ << 24);
-        for( int bit = 0; bit < 8; bit++ )
-        {
-            if( crc & (1L << 31)) crc = (crc << 1) ^ CR32_POLY;
-            else                  crc = (crc << 1);
+    for (size_t i = 0; buffer[i]; i++) {
+        crc = crc ^ (uint64_t) buffer[i];
+        for(size_t j = 0; j < 8; j++) {
+            crc = (crc >> 1) ^ (CR32_POLY & (-(crc & 1)));
         }
     }
 
     return ~crc;
 }
 
-uint64_t crc32_intrinsic_hash_func(char *key, const size_t __attribute__((unused)) len) {
+// FIXME: !const char *key, const size_t len
+uint64_t crc32_intrinsic_hash_func(char *key, const size_t len) {
     uint64_t res = 0;
 
     uint64_t key_vec_u64_0 = 0;
@@ -63,10 +62,10 @@ uint64_t crc32_intrinsic_hash_func(char *key, const size_t __attribute__((unused
     memcpy(&key_vec_u64_2, key + 2, 8);
     memcpy(&key_vec_u64_3, key + 3, 8);
 
-    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 0, 32));
-    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 1, 32));
-    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 2, 32));
-    res = _mm_crc32_u64(res, *(uint64_t*) __builtin_assume_aligned(key + 3, 32));
+    res = _mm_crc32_u64(res, key_vec_u64_0);
+    res = _mm_crc32_u64(res, key_vec_u64_1);
+    res = _mm_crc32_u64(res, key_vec_u64_2);
+    res = _mm_crc32_u64(res, key_vec_u64_3);
 
     return res;
 }

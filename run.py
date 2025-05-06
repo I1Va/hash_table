@@ -7,6 +7,7 @@ import time
 import matplotlib.pyplot as plt
 import seaborn as sns
 import yaml
+import numpy as np
 
 # CONFIG
 CONFIG_PATH = 'configs/benchmarks.yaml'
@@ -69,6 +70,40 @@ def get_standard_deviation(measures_arr):
 
     return standard_deviation
 
+def round_to_n_significant(value, n):
+    if value == 0:
+        return 0.0
+    log10_value = math.log10(abs(value))
+    floor_log = math.floor(log10_value)
+    magnitude = 10 ** (floor_log - (n - 1))
+    rounded = round(value / magnitude) * magnitude
+    return rounded
+
+def format_measurement(average_val, error_val):
+    exponent = math.floor(math.log10(error_val))
+    scaled_error = error_val / (10 ** exponent)
+    scaled_error_rounded = round(scaled_error)
+
+    if scaled_error_rounded >= 10:
+        scaled_error_rounded = 1
+        exponent += 1
+
+    scaled_average = average_val / (10 ** exponent)
+    rounded_scaled_average = round_to_n_significant(scaled_average, 3)
+
+    formatted_average = str(int(round(rounded_scaled_average)))
+    formatted_error = str(int(scaled_error_rounded))
+
+    return f"{formatted_average}e{exponent} ± {formatted_error}e{exponent}"
+
+def get_standard_deviation(measures_arr):
+    n = len(measures_arr)
+    average_value = float(sum(measures_arr)) / n
+    deviation_squares_sum = sum([(average_value - xi)**2 for xi in measures_arr])
+    standard_deviation = math.sqrt(1.0 / (n - 1) * deviation_squares_sum)
+
+    return standard_deviation
+
 def error_remove_lower_digits(error):
     error_str = str(error)
 
@@ -79,30 +114,75 @@ def error_remove_lower_digits(error):
 
     return int(error_str[0]) * 10 ** num_order
 
+def filter_measure_arr(measures_arr):
+    data = np.array(measures_arr)
+    mean = np.mean(measures_arr)
+    std = np.std(measures_arr)
+
+    return list(data[np.abs(data - mean) < 3 * std])
+
 def get_measure_result(measures_arr):
+    if (len(measures_arr) < 2):
+        return "NULL"
+
     n = len(measures_arr)
+    measures_arr = filter_measure_arr(measures_arr)
 
     average_value = float(sum(measures_arr)) / n
     standard_deviation = get_standard_deviation(measures_arr)
     standard_error = standard_deviation / math.sqrt(n)
 
-    return f'{round(average_value, 5)} ± {error_remove_lower_digits(standard_error)} (error : {round(standard_error / average_value * 100, 2)}%)'
+    order = int(math.floor(math.log10(abs(standard_error))))
 
+    rounded_error = round(standard_error, -order)
+    rounded_value = round(average_value, -order)
+
+    return f'{rounded_value} ± {rounded_error} (error : {round(standard_error / average_value * 100, 2)}%)'
 
 # FUNCS FOR VERSIONS BENCHMARKING
+def execute_isolated_hash_tables_benchmarks(compile_flags, launch_flags, version_name):
+    temp_dir = 'temp'
+    os.system(f'mkdir -p {temp_dir}')
+
+    file_name = f'{version_name}_measure'
+    runexec_file_path = f'./output.files/{file_name}'
+
+    temp_res_file_path = f'./{temp_dir}/{file_name}'
+    launch_flags += f' --output={file_name} '
+
+
+    os.system(f'echo -n > {temp_res_file_path}')
+
+    print(f'compile_flags : {compile_flags}')
+    os.system(f'make clean OUTFILE_NAME="{version_name}"')
+    os.system(f'make CFLAGS="{compile_flags}" OUTFILE_NAME="{version_name}"')
+    runexec_command = "runexec --read-only-dir / --container --overlay-dir /home --memlimit 4GB --cores 0-1"
+
+    os.system(f'{runexec_command} -- ./build/{version_name} {launch_flags}')
+
+    os.system(f'mv {runexec_file_path} {temp_res_file_path}')
+
+    measures_arr = []
+    with open(temp_res_file_path, "r") as file:
+        measures_arr = list(map(int, file.read().split()))
+
+    return get_measure_result(measures_arr)
+
 def get_version_testing_time(compile_flags, launch_flags, version_name):
-    temp_res_file_name = "./temp_benchmark_res.out"
-    launch_flags += f' --output={temp_res_file_name} '
+    temp_dir = 'temp'
+    os.system(f'mkdir -p {temp_dir}')
 
-    os.system(f'echo -n > {temp_res_file_name}')
+    temp_res_file_path = f'./{temp_dir}/{version_name}_measure'
+    launch_flags += f' --output={temp_res_file_path} '
 
+    os.system(f'echo -n > {temp_res_file_path}')
+
+    # execute_isolated_hash_tables_benchmarks(compile_flags, launch_flags, version_name)
     execute_hash_tables_benchmarks(compile_flags, launch_flags, version_name)
 
     measures_arr = []
-    with open(temp_res_file_name, "r") as file:
+    with open(temp_res_file_path, "r") as file:
         measures_arr = list(map(int, file.read().split()))
-
-    os.system(f'rm -f {temp_res_file_name}')
 
     return get_measure_result(measures_arr)
 
@@ -125,9 +205,10 @@ def launch_versions_benchmarks():
         for version in prepared_versions:
             version_name = version['version']['name']
             runs_cnt = version['runs_cnt']
+            repeats = CFG['launch_modes']['versions_benchmarks']['heat_cnt']
 
             compile_flags = version['version']['compile_flags']
-            launch_flags = version['version']['launch_flags'] + default_launch_flags + f' --runs={runs_cnt}'
+            launch_flags = version['version']['launch_flags'] + default_launch_flags + f' --measures={runs_cnt} --heat={repeats}'
 
             file.write(f'{version_name} : {get_version_testing_time(compile_flags, launch_flags, version_name)}\n')
 

@@ -37,15 +37,6 @@ hash_function_t choose_hash_function(char hash_function_name[]) {
     return DEFAULT_HASH_FUNCTION;
 }
 
-time_point_t set_time_point() {
-    time_point_t time_point = {};
-
-    time_point.tick_point = __rdtsc();
-
-    return time_point;
-}
-
-static volatile uint64_t dummy_variable = 0;
 void measure_hashing_time(hash_function_t hash_function, tests_data_t tests_data, time_point_t *duration) {
     assert(tests_data.words_32b);
     assert(duration);
@@ -54,7 +45,7 @@ void measure_hashing_time(hash_function_t hash_function, tests_data_t tests_data
     uint64_t tick_start = __rdtsc();
     for (size_t i = 0; i < tests_data.words_cnt; i++) {
         char *key_32b = tests_data.words_32b + i * WORD_32B_NMEMB;
-        dummy_variable = hash_function(key_32b, WORD_32B_NMEMB);
+        [[maybe_unused]] uint64_t dummy_variable = hash_function(key_32b, WORD_32B_NMEMB);
     }
     uint64_t tick_end = __rdtsc();
     duration->tick_point = tick_end - tick_start;
@@ -75,8 +66,7 @@ bool delete_file(const char path[]) {
     return true;
 }
 
-
-bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_point_t *duration) {
+bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_point_t *duration, const size_t measure_repeats) {
     assert(path);
     assert(hash_table);
     assert(duration);
@@ -101,7 +91,6 @@ bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_
         debug("tests_cnt fscanf error");
         CLEAR_MEMORY(exit_mark)
     }
-
     for (size_t i = 0; i < tests_cnt; i++) {
         memset(key_32b, 0, 32);
         int fscanf_res = fscanf(tests_file, "%s", key_32b);
@@ -110,16 +99,16 @@ bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_
             CLEAR_MEMORY(exit_mark)
         }
 
-        tick_start = __rdtsc();
-        list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
-        tick_end = __rdtsc();
-
-        duration->tick_point += (tick_end - tick_start);
-
-        if (read_key_res == NULL) {
-            debug("word '%s' hasn't found\n", key_32b);
-            CLEAR_MEMORY(exit_mark)
+        for (size_t j = 0; j < measure_repeats; j++) {
+            [[maybe_unused]] list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
+            assert(read_key_res);
         }
+
+        tick_start = __rdtsc();
+        [[maybe_unused]] list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
+        assert(read_key_res);
+        tick_end = __rdtsc();
+        duration->tick_point += (tick_end - tick_start);
     }
 
 
@@ -200,7 +189,7 @@ bool run_versions_benchmarks(config_t *config) {
         }
     }
 
-    for (int i = 0; i < config->measures_cnt; i++) {
+    for (size_t i = 0; i < config->measures_cnt; i++) {
         hash_table = {};
         if (!hash_table_32b_t_ctor(&hash_table, HASH_TABLE_SZ, choose_hash_function(config->hash_func_name))) {
             debug("hash_table_32b_t_ctor failed");
@@ -210,7 +199,7 @@ bool run_versions_benchmarks(config_t *config) {
         time_point_t duration = {};
         store_text_in_hash_table(tests_data, &hash_table);
 
-        if (!measure_version_time(TESTS_PATH, &hash_table, &duration)) {
+        if (!measure_version_time(TESTS_PATH, &hash_table, &duration, config->heat_cnt)) {
             debug("run_tests failed");
             CLEAR_MEMORY(exit_mark_free_hash_table)
         }

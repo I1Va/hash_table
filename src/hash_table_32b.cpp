@@ -21,26 +21,6 @@ inline int streq_32b_inline(const char *str1, const char *str2) {
             "vptest ymm0, [%2]\n"
             "seta al\n"
 
-            "vmovdqa ymm0, [%1]\n"
-            "xor rax, rax\n"
-            "vptest ymm0, [%2]\n"
-            "seta al\n"
-
-            "vmovdqa ymm0, [%1]\n"
-            "xor rax, rax\n"
-            "vptest ymm0, [%2]\n"
-            "seta al\n"
-
-            "vmovdqa ymm0, [%1]\n"
-            "xor rax, rax\n"
-            "vptest ymm0, [%2]\n"
-            "seta al\n"
-
-            "vmovdqa ymm0, [%1]\n"
-            "xor rax, rax\n"
-            "vptest ymm0, [%2]\n"
-            "seta al\n"
-
             : "=a"(res)
             : "r"(str1),
               "D"(str2)
@@ -205,7 +185,7 @@ list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key_32b
     #ifdef ASM_INSERTION_CR32
         uint64_t table_idx = inline_crc32_asm_hash_func(key_32b) % hash_table->sz;
     #else
-        uint64_t table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
+        uint64_t table_idx = hash_table->hash_function(key_32b, strnlen(key_32b, 32)) % hash_table->sz;
     #endif // ASM_INSERTION_CR32
 
 

@@ -21,11 +21,12 @@ void scan_argv(config_t *config, const int argc, const char *argv[]) {
 
     opt_data options[] =
     {
-        {"-r", "--runs", "%d", &config->measures_cnt},
+        {"-m", "--measures", "%lu", &config->measures_cnt},
         {"-h", "--hash", "%s", config->hash_func_name},
         {"-o", "--output", "%s", &config->output_path},
         {"-b", "--benchmark", "%s", &config->benchmark},
-        {"-p", "--print", "%d", &config->print_state}
+        {"-p", "--print", "%d", &config->print_state},
+        {"-he", "--heat", "%lu", &config->heat_cnt}
     };
 
     size_t n_options = sizeof(options) / sizeof(opt_data);

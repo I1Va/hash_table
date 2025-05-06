@@ -24,7 +24,8 @@ typedef struct {
 } opt_data;
 
 typedef struct {
-    int measures_cnt;
+    size_t measures_cnt;
+    size_t heat_cnt;
     char hash_func_name[MAX_CONFIG_NAME_SIZE] = {};
     char output_path[MAX_CONFIG_NAME_SIZE] = {};
     char benchmark[MAX_CONFIG_NAME_SIZE] = {};

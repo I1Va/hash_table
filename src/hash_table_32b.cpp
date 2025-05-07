@@ -16,14 +16,14 @@ __attribute__((unused))
 inline int streq_32b_inline(const char str1[], const char str2[]) {
     int res = 0;
     __asm__(".intel_syntax noprefix\n"
-            "vmovdqa ymm0, [%1]\n"
+            "vmovdqa ymm0, [%2]\n"
             "xor rax, rax\n"
-            "vptest ymm0, [%2]\n"
+            "vptest ymm0, [%1]\n"
             "seta al\n"
 
             : "=a"(res)
             : "r"(str1),
-              "D"(str2)
+              "r"(str2)
             : "ymm0", "cc");
 
     return res;

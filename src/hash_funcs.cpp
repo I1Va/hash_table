@@ -1,9 +1,9 @@
+#include <cstdint>
 #include <stdint.h>
 #include <immintrin.h>
 #include <stdint.h>
 #include <string.h>
 #include "hash_funcs.h"
-
 
 uint64_t polynom_hash_func(const char key[]) {
     uint64_t hash = 0;

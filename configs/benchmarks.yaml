@@ -1,27 +1,27 @@
 hash_funcs_names: ["poly", "crc32", "crc32_intrinsic", "fchar", "fnv"]
 
 versions:
-  - name : v1 # версия без оптимизаций
-    compile_flags : "-O0 -march=native -D NDEBUG"
-    launch_flags : "--hash=crc32"
+  - name : v0 # версия без оптимизаций
+    compile_flags : "-march=native -D NDEBUG"
+    launch_flags : "--hash=poly"
 
-  - name : v2 # версия с компиляторными оптимизациями
+  - name : v1 # версия с компиляторными оптимизациями
     compile_flags : "-O3 -march=native -mtune=native -D NDEBUG "
     launch_flags : "--hash=crc32"
 
-  - name : v3 # версия с intrinsic оптимизацией функции crc32
+  - name : v2 # версия с intrinsic оптимизацией функции crc32
     compile_flags : "-O3 -march=native -mtune=native -D NDEBUG"
     launch_flags : "--hash=crc32_intrinsic"
 
-  - name : v4 # версия с использованием собственной реализацией функции streq на ассемблере
+  - name : v3 # версия с использованием собственной реализацией функции streq на ассемблере
     compile_flags : "-O3 -march=native -mtune=native -D MY_STREQ -D NDEBUG "
     launch_flags : "--hash=crc32_intrinsic"
 
-  - name : v5 # версия с использованием inline функции streq с ассемблерными вставками
+  - name : v4 # версия с использованием inline функции streq с ассемблерными вставками
     compile_flags : "-O3 -march=native -mtune=native -masm=intel -D INLINE_ASM_STREQ -D NDEBUG "
     launch_flags : "--hash=crc32_intrinsic"
 
-  - name : v6 # версия с использованием inline хэш-функции crc32 на intrinsic
+  - name : v5 # версия с использованием inline хэш-функции crc32 на intrinsic
     compile_flags : "-O3 -march=native -mtune=native -masm=intel -D INLINE_ASM_STREQ -D INLINE_INTINSIC_CRC32 -D NDEBUG"
     launch_flags : "--hash=crc32_intrinsic"
 
@@ -63,15 +63,15 @@ launch_modes:
   versions_benchmarks:
     heat_cnt : 10 # количество холостых операций find_key для прогрева перед основным измерением
     selected_versions: # "vi" : <benchmark runs cnt>
-      v1 : 200
-      v2 : 200
-      v3 : 200
-      v4 : 200
-      v5 : 200
-      v6 : 200
+      v0 : 100
+      v1 : 2
+      v2 : 2
+      v3 : 2
+      v4 : 2
+      v5 : 2
 
   versions_build:
-    selected_versions: ["v1", "v2", "v3", "v4", "v5", "v6"]
+    selected_versions: [v4]
   hashes_benchmarks:
     compile_flags: -O3 -march=native -mtune=native
 

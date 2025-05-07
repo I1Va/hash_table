@@ -34,7 +34,7 @@ uint64_t fnv1a_hash(const char key[], const size_t len) {
 }
 
 uint64_t crc32_hash_func(const char key[], const size_t len) {
-    const uint64_t CR32_POLY = 0x04C11DB7;
+    const uint64_t CR32_POLY = 0x11EDC6F41;
     const unsigned char *buffer = (const unsigned char*) key;
     uint64_t crc = (uint64_t) -1;
 
@@ -48,7 +48,7 @@ uint64_t crc32_hash_func(const char key[], const size_t len) {
     return ~crc;
 }
 
-uint64_t crc32_intrinsic_hash_func(const char key[], const size_t len) {
+uint64_t crc32_intrinsic_hash_func(const char key[], const size_t len __attribute__((unused))) {
     uint64_t res = 0;
 
     uint64_t key_vec_u64_0 = 0;

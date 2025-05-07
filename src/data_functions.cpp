@@ -1,4 +1,4 @@
-#include <cstdlib>
+#include <stdlib.h>
 #include <cstring>
 #include <ctime>
 #include <ctype.h>
@@ -8,9 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdint.h>
-#include <errno.h>
 
-#include "benchmark_funcs.h"
 #include "general_structs.h"
 #include "general.h"
 #include "hash_table_32b.h"

@@ -63,12 +63,12 @@ launch_modes:
   versions_benchmarks:
     heat_cnt : 10 # количество холостых операций find_key для прогрева перед основным измерением
     selected_versions: # "vi" : <benchmark runs cnt>
-      v1 : 100
-      v2 : 100
-      v3 : 100
-      v4 : 100
-      v5 : 100
-      v6 : 100
+      v1 : 200
+      v2 : 200
+      v3 : 200
+      v4 : 200
+      v5 : 200
+      v6 : 200
 
   versions_build:
     selected_versions: ["v1", "v2", "v3", "v4", "v5", "v6"]

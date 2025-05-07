@@ -3,6 +3,7 @@ docs/*
 data/*
 debug/*
 temp/*
+.vscode/*
 .cache/*
 compile_commands.json
 python_venv/*

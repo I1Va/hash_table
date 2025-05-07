@@ -1,7 +1,7 @@
 #ifndef DATA_FUNCTIONS_H
 #define DATA_FUNCTIONS_H
 
-#include <cstdlib>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>

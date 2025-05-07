@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
+
 typedef uint64_t (*hash_function_t) (const char key_32b[], const size_t len);
 
 uint64_t polynom_hash_func(const char key[], const size_t len);

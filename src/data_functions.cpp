@@ -92,18 +92,6 @@ size_t get_word_len(const char *start, const char *end) {
     return (size_t) (cur_ptr - start);
 }
 
-void print_string_t(const string_t string) {
-    if (string.ptr == NULL) {
-        printf("NULL, len=%lu", string.len);
-    } else {
-         printf("'");
-
-        for (size_t i = 0; i < string.len; i++) {
-            putc(string.ptr[i], stdout);
-        }
-        printf("', len=%lu", string.len);
-    }
-}
 
 bool store_text_in_hash_table(tests_data_t tests_data, hash_table_32b_t *hash_table) {
     assert(tests_data.words_32b);

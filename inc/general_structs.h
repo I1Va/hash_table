@@ -3,12 +3,6 @@
 
 #include <string.h>
 
-
-struct string_t {
-    char *ptr;
-    size_t len;
-};
-
 const size_t WORD_32B_NMEMB = 32;
 
 

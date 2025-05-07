@@ -45,7 +45,7 @@ void measure_hashing_time(hash_function_t hash_function, tests_data_t tests_data
     uint64_t tick_start = __rdtsc();
     for (size_t i = 0; i < tests_data.words_cnt; i++) {
         char *key_32b = tests_data.words_32b + i * WORD_32B_NMEMB;
-        [[maybe_unused]] uint64_t dummy_variable = hash_function(key_32b, WORD_32B_NMEMB);
+        [[maybe_unused]] uint64_t dummy_variable = hash_function(key_32b);
     }
     uint64_t tick_end = __rdtsc();
     duration->tick_point = tick_end - tick_start;

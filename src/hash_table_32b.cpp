@@ -13,7 +13,7 @@
 
 
 __attribute__((unused))
-inline int streq_32b_inline(const char *str1, const char *str2) {
+inline int streq_32b_inline(const char str1[], const char str2[]) {
     int res = 0;
     __asm__(".intel_syntax noprefix\n"
             "vmovdqa ymm0, [%1]\n"
@@ -30,7 +30,7 @@ inline int streq_32b_inline(const char *str1, const char *str2) {
 }
 
 __attribute__((unused))
-inline uint64_t inline_crc32_intrinsic_hash_func(char *key) {
+inline uint64_t inline_crc32_intrinsic_hash_func(const char key[]) {
     uint64_t res = 0;
 
     uint64_t key_vec_u64_0 = 0;
@@ -88,7 +88,7 @@ void hash_table_t_dtor(hash_table_32b_t *hash_table) {
     free(hash_table->data);
 }
 
-list_node_t *list_node_t_ctor(char *key) {
+list_node_t *list_node_t_ctor(const char key[]) {
     list_node_t *list_node = (list_node_t *) calloc(1, sizeof(list_node_t));
     if (!list_node) return NULL;
 
@@ -125,7 +125,7 @@ void hash_table_32b_dump_bucket_sizes(FILE *stream, hash_table_32b_t *hash_table
     fprintf(stream, "\n");
 }
 
-bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
+bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, const char key_32b[]) {
     assert(hash_table);
 
     #ifdef INLINE_INTINSIC_CR32
@@ -134,7 +134,7 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
     #endif // INLINE_INTINSIC_CR32
 
     #ifndef HASH_OPTIMIZATION_SELECTED
-        uint64_t table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
+        uint64_t table_idx = hash_table->hash_function(key_32b) % hash_table->sz;
     #else
         #undef HASH_OPTIMIZATION_SELECTED
     #endif // NOT HASH_OPTIMIZATION_SELECTED
@@ -179,13 +179,13 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, char *key_32b) {
     return true;
 }
 
-list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, char *key_32b) {
+list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, const char key_32b[]) {
     assert(hash_table);
 
     #ifdef ASM_INSERTION_CR32
         uint64_t table_idx = inline_crc32_asm_hash_func(key_32b) % hash_table->sz;
     #else
-        uint64_t table_idx = hash_table->hash_function(key_32b, 32) % hash_table->sz;
+        uint64_t table_idx = hash_table->hash_function(key_32b) % hash_table->sz;
     #endif // ASM_INSERTION_CR32
 
 

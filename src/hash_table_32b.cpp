@@ -128,10 +128,10 @@ void hash_table_32b_dump_bucket_sizes(FILE *stream, hash_table_32b_t *hash_table
 bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, const char key_32b[]) {
     assert(hash_table);
 
-    #ifdef INLINE_INTINSIC_CR32
+    #ifdef INLINE_INTINSIC_CRC32
         uint64_t table_idx = inline_crc32_intrinsic_hash_func(key_32b) % hash_table->sz;
         #define HASH_OPTIMIZATION_SELECTED
-    #endif // INLINE_INTINSIC_CR32
+    #endif // INLINE_INTINSIC_CRC32
 
     #ifndef HASH_OPTIMIZATION_SELECTED
         uint64_t table_idx = hash_table->hash_function(key_32b) % hash_table->sz;
@@ -182,11 +182,11 @@ bool hash_table_32b_insert_key(hash_table_32b_t *hash_table, const char key_32b[
 list_node_t *hash_table_32b_find_key(hash_table_32b_t *hash_table, const char key_32b[]) {
     assert(hash_table);
 
-    #ifdef ASM_INSERTION_CR32
+    #ifdef ASM_INSERTION_CRC32
         uint64_t table_idx = inline_crc32_asm_hash_func(key_32b) % hash_table->sz;
     #else
         uint64_t table_idx = hash_table->hash_function(key_32b) % hash_table->sz;
-    #endif // ASM_INSERTION_CR32
+    #endif // ASM_INSERTION_CRC32
 
 
     list_node_t *cur_node = hash_table->data[table_idx];

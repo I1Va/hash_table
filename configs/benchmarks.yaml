@@ -1,29 +1,29 @@
-hash_funcs_names: ["poly", "cr32", "cr32_intrinsic", "fchar", "fnv"]
+hash_funcs_names: ["poly", "crc32", "crc32_intrinsic", "fchar", "fnv"]
 
 versions:
   - name : v1 # версия без оптимизаций
     compile_flags : "-O0 -march=native -D NDEBUG"
-    launch_flags : "--hash=cr32"
+    launch_flags : "--hash=crc32"
 
   - name : v2 # версия с компиляторными оптимизациями
     compile_flags : "-O3 -march=native -mtune=native -D NDEBUG "
-    launch_flags : "--hash=cr32"
+    launch_flags : "--hash=crc32"
 
-  - name : v3 # версия с intrinsic оптимизацией функции cr32
+  - name : v3 # версия с intrinsic оптимизацией функции crc32
     compile_flags : "-O3 -march=native -mtune=native -D NDEBUG"
-    launch_flags : "--hash=cr32_intrinsic"
+    launch_flags : "--hash=crc32_intrinsic"
 
   - name : v4 # версия с использованием собственной реализацией функции streq на ассемблере
     compile_flags : "-O3 -march=native -mtune=native -D MY_STREQ -D NDEBUG "
-    launch_flags : "--hash=cr32_intrinsic"
+    launch_flags : "--hash=crc32_intrinsic"
 
   - name : v5 # версия с использованием inline функции streq с ассемблерными вставками
     compile_flags : "-O3 -march=native -mtune=native -masm=intel -D INLINE_ASM_STREQ -D NDEBUG "
-    launch_flags : "--hash=cr32_intrinsic"
+    launch_flags : "--hash=crc32_intrinsic"
 
-  - name : v6 # версия с использованием inline хэш-функции cr32 на intrinsic
-    compile_flags : "-O3 -march=native -mtune=native -masm=intel -D INLINE_ASM_STREQ -D INLINE_INTINSIC_CR32 -D NDEBUG"
-    launch_flags : "--hash=cr32_intrinsic"
+  - name : v6 # версия с использованием inline хэш-функции crc32 на intrinsic
+    compile_flags : "-O3 -march=native -mtune=native -masm=intel -D INLINE_ASM_STREQ -D INLINE_INTINSIC_CRC32 -D NDEBUG"
+    launch_flags : "--hash=crc32_intrinsic"
 
 tests_gen:
     data_dir : data

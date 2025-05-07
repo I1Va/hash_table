@@ -19,10 +19,10 @@ hash_function_t choose_hash_function(char hash_function_name[]) {
 
     hash_function_t DEFAULT_HASH_FUNCTION = crc32_intrinsic_hash_func;
 
-    if (strncmp(hash_function_name, "cr32_intrinsic", MAX_CONFIG_NAME_SIZE) == 0) {
+    if (strncmp(hash_function_name, "crc32_intrinsic", MAX_CONFIG_NAME_SIZE) == 0) {
         return crc32_intrinsic_hash_func;
     }
-    if (strncmp(hash_function_name, "cr32", MAX_CONFIG_NAME_SIZE) == 0) {
+    if (strncmp(hash_function_name, "crc32", MAX_CONFIG_NAME_SIZE) == 0) {
         return crc32_hash_func;
     }
     if (strncmp(hash_function_name, "poly", MAX_CONFIG_NAME_SIZE) == 0) {

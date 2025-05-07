@@ -34,14 +34,14 @@ uint64_t fnv1a_hash(const char key[]) {
 }
 
 uint64_t crc32_hash_func(const char key[]) {
-    const uint64_t CR32_POLY = 0x11EDC6F41;
+    const uint64_t CRC32_POLY = 0x11EDC6F41;
     const unsigned char *buffer = (const unsigned char*) key;
     uint64_t crc = (uint64_t) -1;
 
     for (size_t i = 0; buffer[i]; i++) {
         crc = crc ^ (uint64_t) buffer[i];
         for(size_t j = 0; j < 8; j++) {
-            crc = (crc >> 1) ^ (CR32_POLY & (-(crc & 1)));
+            crc = (crc >> 1) ^ (CRC32_POLY & (-(crc & 1)));
         }
     }
 

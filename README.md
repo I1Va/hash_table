@@ -180,7 +180,19 @@ perf report --call-graph fractal,caller -i <путь до perf.data>
 
 ##### 3.1 __Разогрев (`Warm-up`):__
 
-Перед основными измерениями выполняется серия холостых вызовов функции find_key для исключения влияния первого запуска и кэш-прогрева.
+Перед основными измерениями выполняется серия холостых вызовов функции find_key, прогревающая кэш и предсказатель ветвлений.
+```c++
+for (size_t j = 0; j < measure_warm_up_repeats; j++) { // разогрев
+    [[maybe_unused]] list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
+    assert(read_key_res);
+}
+
+tick_start = __rdtsc();
+[[maybe_unused]] list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
+assert(read_key_res);
+tick_end = __rdtsc();
+duration->tick_point += (tick_end - tick_start);
+```
 
 ##### 3.2 __Основные замеры:__
 

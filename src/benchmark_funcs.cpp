@@ -66,7 +66,7 @@ bool delete_file(const char path[]) {
     return true;
 }
 
-bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_point_t *duration, const size_t measure_repeats) {
+bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_point_t *duration, const size_t measure_warm_up_repeats) {
     assert(path);
     assert(hash_table);
     assert(duration);
@@ -99,7 +99,7 @@ bool measure_version_time(const char path[], hash_table_32b_t *hash_table, time_
             CLEAR_MEMORY(exit_mark)
         }
 
-        for (size_t j = 0; j < measure_repeats; j++) {
+        for (size_t j = 0; j < measure_warm_up_repeats; j++) {
             [[maybe_unused]] list_node_t *read_key_res = hash_table_32b_find_key(hash_table, key_32b);
             assert(read_key_res);
         }
